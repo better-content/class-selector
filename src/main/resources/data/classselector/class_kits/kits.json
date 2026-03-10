@@ -1,0 +1,38 @@
+[
+  {
+    "id": "warrior",
+    "title": "Warrior",
+    "blurb": "Front-line melee fighter",
+    "description": "Starts with heavy melee tools and food to survive early encounters.",
+    "items": [
+      { "item": "minecraft:iron_helmet", "count": 1, "slot": "armor:head" },
+      { "item": "minecraft:iron_chestplate", "count": 1, "slot": "armor:chest" },
+      { "item": "minecraft:iron_sword", "count": 1, "slot": "inventory" },
+      { "item": "minecraft:shield", "count": 1, "slot": "inventory" },
+      { "item": "minecraft:cooked_beef", "count": 16, "slot": "inventory" }
+    ]
+  },
+  {
+    "id": "ranger",
+    "title": "Ranger",
+    "blurb": "Ranged specialist",
+    "description": "Starts with a bow and arrows for safer ranged combat and scouting.",
+    "items": [
+      { "item": "minecraft:leather_boots", "count": 1, "slot": "armor:feet" },
+      { "item": "minecraft:bow", "count": 1, "slot": "inventory" },
+      { "item": "minecraft:arrow", "count": 64, "slot": "inventory" },
+      { "item": "minecraft:spyglass", "count": 1, "slot": "curio:charm" }
+    ]
+  },
+  {
+    "id": "scholar",
+    "title": "Scholar",
+    "blurb": "Utility and progression focus",
+    "description": "Starts with books and tools for exploration, crafting, and utility play.",
+    "items": [
+      { "item": "minecraft:book", "count": 8, "slot": "inventory" },
+      { "item": "minecraft:iron_pickaxe", "count": 1, "slot": "inventory" },
+      { "item": "minecraft:torch", "count": 32, "slot": "inventory" }
+    ]
+  }
+]
