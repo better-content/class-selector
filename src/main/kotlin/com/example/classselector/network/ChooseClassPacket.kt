@@ -19,7 +19,11 @@ class ChooseClassPacket(private val classId: String) {
             ctx.enqueueWork {
                 val player = ctx.sender ?: return@enqueueWork
                 if (KitApplicator.hasSelectedClass(player)) return@enqueueWork
-                val kit = ClassKitRepository.get().firstOrNull { it.id == packet.classId } ?: return@enqueueWork
+                val kit = ClassKitRepository.get().firstOrNull { it.id == packet.classId }
+                if (kit == null) {
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal("Invalid class selection."))
+                    return@enqueueWork
+                }
                 KitApplicator.apply(player, kit)
             }
             ctx.packetHandled = true

@@ -6,8 +6,9 @@ import com.example.classselector.network.ClassSelectorNetwork
 import com.example.classselector.network.RequestOpenMenuPacket
 import com.example.classselector.network.SyncClassesPacket
 import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.GameType
-import net.minecraftforge.event.AddReloadListenerEvent
+import net.minecraftforge.event.OnDatapackSyncEvent
 import net.minecraftforge.event.entity.player.PlayerEvent
 import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
@@ -27,15 +28,37 @@ class ClassSelectorMod {
 
 @Mod.EventBusSubscriber(modid = ClassSelectorMod.MOD_ID)
 object ServerEvents {
-    @SubscribeEvent
-    fun onReload(event: AddReloadListenerEvent) {
-        ClassKitRepository.load(event.serverResources.resourceManager)
-    }
 
     @SubscribeEvent
+    fun onDatapackSync(event: OnDatapackSyncEvent) {
+        val kits = runCatching { ClassKitRepository.load(event.playerList.server.resourceManager) }
+            .getOrElse {
+                val message = Component.literal("Class kits failed to reload; check server logs and datapacks.")
+                event.player?.sendSystemMessage(message) ?: event.playerList.broadcastSystemMessage(message, false)
+                emptyList()
+            }
+
+        if (event.player != null) {
+            ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { event.player }, SyncClassesPacket.fromKits(kits))
+            return
+        }
+
+        event.playerList.players.forEach { online ->
+            ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { online }, SyncClassesPacket.fromKits(kits))
+        }
+    }
+    @SubscribeEvent
     fun onPlayerJoin(event: PlayerLoggedInEvent) {
-        val player = event.entity
-        val kits = ClassKitRepository.get()
+        val player = event.entity as? ServerPlayer ?: return
+        val kits = if (ClassKitRepository.get().isEmpty()) {
+            runCatching { ClassKitRepository.load(player.server.resourceManager) }
+                .getOrElse {
+                    player.sendSystemMessage(Component.literal("Class kits failed to load; contact an admin."))
+                    emptyList()
+                }
+        } else {
+            ClassKitRepository.get()
+        }
         ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { player }, SyncClassesPacket.fromKits(kits))
 
         if (!KitApplicator.hasSelectedClass(player)) {

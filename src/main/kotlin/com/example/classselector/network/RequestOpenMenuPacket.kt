@@ -7,11 +7,12 @@ import java.util.function.Supplier
 
 class RequestOpenMenuPacket {
     companion object {
-        fun encode(packet: RequestOpenMenuPacket, buf: FriendlyByteBuf) {}
-        fun decode(buf: FriendlyByteBuf): RequestOpenMenuPacket = RequestOpenMenuPacket()
-        fun handle(packet: RequestOpenMenuPacket, context: Supplier<NetworkEvent.Context>) {
-            context.get().enqueueWork { ClassSelectionState.promptOpen = true }
-            context.get().packetHandled = true
+        fun encode(@Suppress("UNUSED_PARAMETER") packet: RequestOpenMenuPacket, @Suppress("UNUSED_PARAMETER") buf: FriendlyByteBuf) {}
+        fun decode(@Suppress("UNUSED_PARAMETER") buf: FriendlyByteBuf): RequestOpenMenuPacket = RequestOpenMenuPacket()
+        fun handle(@Suppress("UNUSED_PARAMETER") packet: RequestOpenMenuPacket, context: Supplier<NetworkEvent.Context>) {
+            val ctx = context.get()
+            ctx.enqueueWork { ClassSelectionState.promptOpen = true }
+            ctx.packetHandled = true
         }
     }
 }
