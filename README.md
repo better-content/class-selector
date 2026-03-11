@@ -28,6 +28,14 @@ Use Java 17 for all commands.
 JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH gradle test
 ```
 
+
+### Local client
+```bash
+JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH ./run-client
+```
+
+`run-client` is a small helper that runs `gradle runClient` for convenience.
+
 ### Headless Forge GameTests
 ```bash
 JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH gradle headlessGameTest
