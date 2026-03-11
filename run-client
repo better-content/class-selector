@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v gradle >/dev/null 2>&1; then
+  echo "Error: gradle is not installed or not on PATH." >&2
+  echo "Install Gradle and rerun: gradle runClient" >&2
+  exit 1
+fi
+
+exec gradle runClient "$@"
