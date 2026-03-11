@@ -22,10 +22,12 @@ class SyncClassesPacket(private val jsonPayload: String) {
         fun decode(buf: FriendlyByteBuf): SyncClassesPacket = SyncClassesPacket(buf.readUtf(32767))
 
         fun handle(packet: SyncClassesPacket, context: Supplier<NetworkEvent.Context>) {
-            context.get().enqueueWork {
-                ClassSelectionState.kits = gson.fromJson(packet.jsonPayload, type)
+            val ctx = context.get()
+            ctx.enqueueWork {
+                ClassSelectionState.kits = runCatching { gson.fromJson<List<ClassKit>>(packet.jsonPayload, type) }
+                    .getOrDefault(emptyList())
             }
-            context.get().packetHandled = true
+            ctx.packetHandled = true
         }
     }
 }

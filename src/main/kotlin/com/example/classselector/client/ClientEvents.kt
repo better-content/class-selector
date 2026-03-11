@@ -14,12 +14,13 @@ import org.lwjgl.glfw.GLFW
 
 @Mod.EventBusSubscriber(modid = ClassSelectorMod.MOD_ID, value = [Dist.CLIENT], bus = Mod.EventBusSubscriber.Bus.MOD)
 object ClientModEvents {
-    lateinit var openClassMenuKey: KeyMapping
+    var openClassMenuKey: KeyMapping? = null
 
     @SubscribeEvent
     fun registerKeys(event: RegisterKeyMappingsEvent) {
-        openClassMenuKey = KeyMapping("key.classselector.open_menu", GLFW.GLFW_KEY_K, "key.categories.gameplay")
-        event.register(openClassMenuKey)
+        val key = KeyMapping("key.classselector.open_menu", GLFW.GLFW_KEY_K, "key.categories.gameplay")
+        openClassMenuKey = key
+        event.register(key)
     }
 }
 
@@ -30,7 +31,7 @@ object ClientForgeEvents {
         if (event.phase != TickEvent.Phase.END) return
         val mc = Minecraft.getInstance()
 
-        if (::ClientModEvents.openClassMenuKey.isInitialized && ClientModEvents.openClassMenuKey.consumeClick()) {
+        if (ClientModEvents.openClassMenuKey?.consumeClick() == true) {
             if (ClassSelectionState.kits.isNotEmpty()) {
                 mc.setScreen(ClassSelectionScreen(ClassSelectionState.kits))
             } else {

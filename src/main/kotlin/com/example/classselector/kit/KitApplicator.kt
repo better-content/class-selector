@@ -57,12 +57,12 @@ object KitApplicator {
 
     private fun equipCurioSlot(player: ServerPlayer, stack: ItemStack, curioIdentifier: String) {
         val inventory = CuriosApi.getCuriosInventory(player)
-        if (inventory.isEmpty) {
+        if (!inventory.isPresent) {
             player.addItem(stack)
             return
         }
 
-        val handler = inventory.get().curios[curioIdentifier]
+        val handler = inventory.resolve().orElse(null)?.getStacksHandler(curioIdentifier)?.orElse(null)
         if (handler == null) {
             player.addItem(stack)
             return
