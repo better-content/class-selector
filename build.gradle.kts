@@ -77,11 +77,11 @@ tasks.register("headlessGameTest") {
 
 tasks.processResources {
     val props = mapOf(
-        "minecraft_version" to property("minecraft_version"),
-        "forge_version" to property("forge_version"),
-        "mod_id" to property("mod_id"),
-        "mod_name" to property("mod_name"),
-        "mod_version" to property("mod_version")
+        "minecraft_version" to project.property("minecraft_version"),
+        "forge_version" to project.property("forge_version"),
+        "mod_id" to project.property("mod_id"),
+        "mod_name" to project.property("mod_name"),
+        "mod_version" to project.property("mod_version")
     )
 
     inputs.properties(props)
