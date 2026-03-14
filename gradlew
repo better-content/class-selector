@@ -114,7 +114,17 @@ case "$( uname )" in                #(
   NONSTOP* )        nonstop=true ;;
 esac
 
-CLASSPATH="\\\"\\\""
+CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+
+if [ ! -f "$CLASSPATH" ] ; then
+    if command -v gradle >/dev/null 2>&1 ; then
+        warn "gradle-wrapper.jar is missing; falling back to installed Gradle."
+        exec gradle "$@"
+    fi
+    die "ERROR: Missing gradle-wrapper.jar and no \"gradle\" executable found in PATH.
+
+Run \"gradle wrapper\" to regenerate wrapper files, or install Gradle."
+fi
 
 
 # Determine the Java command to use to start the JVM.
@@ -213,7 +223,7 @@ DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
 set -- \
         "-Dorg.gradle.appname=$APP_BASE_NAME" \
         -classpath "$CLASSPATH" \
-        -jar "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" \
+        org.gradle.wrapper.GradleWrapperMain \
         "$@"
 
 # Stop when "xargs" is not available.
