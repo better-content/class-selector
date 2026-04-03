@@ -1,5 +1,6 @@
 package com.example.classselector.network
 
+import com.example.classselector.ClassSelectorScope
 import com.example.classselector.kit.ClassKitRepository
 import com.example.classselector.kit.KitApplicator
 import net.minecraft.network.FriendlyByteBuf
@@ -18,6 +19,7 @@ class ChooseClassPacket(private val classId: String) {
             val ctx = context.get()
             ctx.enqueueWork {
                 val player = ctx.sender ?: return@enqueueWork
+                if (!ClassSelectorScope.isActiveIn(player.server)) return@enqueueWork
                 if (KitApplicator.hasSelectedClass(player)) return@enqueueWork
                 val kit = ClassKitRepository.get().firstOrNull { it.id == packet.classId }
                 if (kit == null) {

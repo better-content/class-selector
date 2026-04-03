@@ -9,6 +9,7 @@ import net.minecraftforge.gametest.GameTestHolder
 
 @GameTestHolder(ClassSelectorMod.MOD_ID)
 object ClassSelectorGameTests {
+    @JvmStatic
     @GameTest(template = "empty")
     fun kitsShouldLoad(helper: GameTestHelper) {
         val kits = ClassKitRepository.load(helper.level.server.resourceManager)

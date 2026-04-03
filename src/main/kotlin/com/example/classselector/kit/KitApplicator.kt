@@ -1,14 +1,14 @@
 package com.example.classselector.kit
 
+import com.example.classselector.respawn.RespawnHubService
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
-import net.minecraft.world.level.GameType
+import net.minecraftforge.fml.ModList
 import net.minecraftforge.registries.ForgeRegistries
-import top.theillusivec4.curios.api.CuriosApi
 
 object KitApplicator {
     const val SELECTED_CLASS_TAG: String = "classselector:selected_class"
@@ -19,12 +19,18 @@ object KitApplicator {
         player.inventory.clearContent()
         kit.items.forEach { giveItemToConfiguredSlot(player, it) }
         player.persistentData.putString(SELECTED_CLASS_TAG, kit.id)
-        player.setGameMode(GameType.SURVIVAL)
-        player.sendSystemMessage(Component.literal("Class selected: ${kit.title}"))
+        RespawnHubService.onVotingEligibilityChanged(player.server)
+        val released = RespawnHubService.tryReleasePlayerFromSpectator(player)
+        if (released) {
+            player.sendSystemMessage(Component.literal("Class selected: ${kit.title}"))
+        } else {
+            player.sendSystemMessage(Component.literal("Class selected: ${kit.title}. Waiting for a finalized spawn location."))
+        }
     }
 
     private fun giveItemToConfiguredSlot(player: ServerPlayer, kitItem: KitItem) {
-        val item = ForgeRegistries.ITEMS.getValue(ResourceLocation(kitItem.item)) ?: return
+        val itemId = ResourceLocation.tryParse(kitItem.item) ?: return
+        val item = ForgeRegistries.ITEMS.getValue(itemId) ?: return
         if (item == Items.AIR) return
 
         val stack = ItemStack(item, kitItem.count.coerceAtLeast(1))
@@ -56,21 +62,32 @@ object KitApplicator {
     }
 
     private fun equipCurioSlot(player: ServerPlayer, stack: ItemStack, curioIdentifier: String) {
-        val inventory = CuriosApi.getCuriosInventory(player)
-        if (!inventory.isPresent) {
+        if (!ModList.get().isLoaded("curios")) {
             player.addItem(stack)
             return
         }
 
-        val handler = inventory.resolve().orElse(null)?.getStacksHandler(curioIdentifier)?.orElse(null)
+        val handler = resolveCurioStacksHandler(player, curioIdentifier)
         if (handler == null) {
             player.addItem(stack)
             return
         }
 
-        for (index in 0 until handler.slots) {
-            if (handler.stacks.getStackInSlot(index).isEmpty) {
-                handler.stacks.setStackInSlot(index, stack.copyWithCount(1))
+        val slots = handler.javaClass.getMethod("getSlots").invoke(handler) as? Int ?: run {
+            player.addItem(stack)
+            return
+        }
+        val dynamicHandler = handler.javaClass.getMethod("getStacks").invoke(handler) ?: run {
+            player.addItem(stack)
+            return
+        }
+        val getStackInSlot = dynamicHandler.javaClass.getMethod("getStackInSlot", Int::class.javaPrimitiveType)
+        val setStackInSlot = dynamicHandler.javaClass.getMethod("setStackInSlot", Int::class.javaPrimitiveType, ItemStack::class.java)
+
+        for (index in 0 until slots) {
+            val currentStack = getStackInSlot.invoke(dynamicHandler, index) as? ItemStack ?: continue
+            if (currentStack.isEmpty) {
+                setStackInSlot.invoke(dynamicHandler, index, stack.copyWithCount(1))
                 val remainder = stack.count - 1
                 if (remainder > 0) {
                     player.addItem(stack.copyWithCount(remainder))
@@ -81,4 +98,18 @@ object KitApplicator {
 
         player.addItem(stack)
     }
+
+    private fun resolveCurioStacksHandler(player: ServerPlayer, curioIdentifier: String): Any? = runCatching {
+        val curiosApiClass = Class.forName("top.theillusivec4.curios.api.CuriosApi")
+        val getCuriosInventory = curiosApiClass.getMethod("getCuriosInventory", net.minecraft.world.entity.LivingEntity::class.java)
+        val inventoryOptional = getCuriosInventory.invoke(null, player) ?: return null
+        val resolveMethod = inventoryOptional.javaClass.getMethod("resolve")
+        val resolvedInventory = resolveMethod.invoke(inventoryOptional)
+        val orElseMethod = resolvedInventory.javaClass.getMethod("orElse", Any::class.java)
+        val inventoryHandler = orElseMethod.invoke(resolvedInventory, null) ?: return null
+        val getStacksHandler = inventoryHandler.javaClass.getMethod("getStacksHandler", String::class.java)
+        val stacksHandlerOptional = getStacksHandler.invoke(inventoryHandler, curioIdentifier) ?: return null
+        val handlerOrElse = stacksHandlerOptional.javaClass.getMethod("orElse", Any::class.java)
+        handlerOrElse.invoke(stacksHandlerOptional, null)
+    }.getOrNull()
 }

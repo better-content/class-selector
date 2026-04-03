@@ -5,6 +5,7 @@ import com.example.classselector.kit.KitApplicator
 import com.example.classselector.network.ClassSelectorNetwork
 import com.example.classselector.network.RequestOpenMenuPacket
 import com.example.classselector.network.SyncClassesPacket
+import com.example.classselector.respawn.RespawnHubService
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.GameType
@@ -29,6 +30,7 @@ class ClassSelectorMod {
 @Mod.EventBusSubscriber(modid = ClassSelectorMod.MOD_ID)
 object ServerEvents {
 
+    @JvmStatic
     @SubscribeEvent
     fun onDatapackSync(event: OnDatapackSyncEvent) {
         val kits = runCatching { ClassKitRepository.load(event.playerList.server.resourceManager) }
@@ -37,16 +39,25 @@ object ServerEvents {
                 event.player?.sendSystemMessage(message) ?: event.playerList.broadcastSystemMessage(message, false)
                 emptyList()
             }
+        val activeInWorld = ClassSelectorScope.isActiveIn(event.playerList.server)
 
         if (event.player != null) {
-            ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { event.player }, SyncClassesPacket.fromKits(kits))
+            ClassSelectorNetwork.CHANNEL.send(
+                PacketDistributor.PLAYER.with { event.player },
+                SyncClassesPacket.fromKits(activeInWorld, kits)
+            )
             return
         }
 
         event.playerList.players.forEach { online ->
-            ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { online }, SyncClassesPacket.fromKits(kits))
+            ClassSelectorNetwork.CHANNEL.send(
+                PacketDistributor.PLAYER.with { online },
+                SyncClassesPacket.fromKits(activeInWorld, kits)
+            )
         }
     }
+
+    @JvmStatic
     @SubscribeEvent
     fun onPlayerJoin(event: PlayerLoggedInEvent) {
         val player = event.entity as? ServerPlayer ?: return
@@ -59,15 +70,28 @@ object ServerEvents {
         } else {
             ClassKitRepository.get()
         }
-        ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { player }, SyncClassesPacket.fromKits(kits))
+        val activeInWorld = ClassSelectorScope.isActiveIn(player.server)
+        ClassSelectorNetwork.CHANNEL.send(
+            PacketDistributor.PLAYER.with { player },
+            SyncClassesPacket.fromKits(activeInWorld, kits)
+        )
+        RespawnHubService.syncVotingState(player)
+
+        if (!activeInWorld) {
+            return
+        }
 
         if (!KitApplicator.hasSelectedClass(player)) {
             player.setGameMode(GameType.SPECTATOR)
             player.sendSystemMessage(Component.literal("Choose a class to begin."))
             ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { player }, RequestOpenMenuPacket())
+            return
         }
+
+        RespawnHubService.tryReleasePlayerFromSpectator(player)
     }
 
+    @JvmStatic
     @SubscribeEvent
     fun onClone(event: PlayerEvent.Clone) {
         if (!event.isWasDeath) return

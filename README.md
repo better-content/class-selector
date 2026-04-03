@@ -5,6 +5,30 @@ A Forge mod that forces new players to pick a class before starting:
 - Client is prompted to open class menu with `K`.
 - Class menu shows title, blurb, and description.
 - Kits are JSON-defined in `data/classselector/class_kits/kits.json`.
+- Includes a respawn hub system with exact scripted spooky SFX/VFX and spectator hub voting.
+
+## Respawn hubs
+
+`/rrhubs enable` turns on respawn hub routing. If a respawning player does not have a personal bed/anchor spawn, they are routed to the least-used finalized hub.
+
+Hub FX match the ported script:
+- crying obsidian is placed beneath the hub pad
+- the same bell / end portal / warden / evoker sound stack is played
+- the same scheduled `sculk_soul`, `sculk_charge`, `sculk_charge_pop`, and `soul_fire_flame` particle pulses are emitted for ~3 seconds
+
+Voting flow:
+- currently logged-in spectators without a class can run `/rrhubs suggest_here` to propose their current location
+- `/rrhubs proposals` lists active proposals with clickable vote actions
+- `/rrhubs vote <proposal>` casts or changes a vote
+- when every currently logged-in unclassed spectator has voted and there is a clear winner, that proposal is finalized into a respawn hub automatically
+
+Admin override commands:
+- `/rrhubs add_here`
+- `/rrhubs remove_here`
+- `/rrhubs remove_index <index>`
+- `/rrhubs clear`
+- `/rrhubs list`
+- `/rrhubs tp <index>`
 
 ## Kit slot targeting
 

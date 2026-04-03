@@ -26,8 +26,8 @@ Class selection mod with JSON-defined starter kits.
     side="BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="curios"
+    modId="kotlinforforge"
     mandatory=true
-    versionRange="[5.9.1,)"
-    ordering="AFTER"
+    versionRange="[${kotlinforforge_version},)"
+    ordering="NONE"
     side="BOTH"
