@@ -1,8 +1,6 @@
 package com.example.classselector.network
 
 import com.example.classselector.client.ClassSelectionState
-import com.example.classselector.client.RespawnVotingSnapshot
-import com.example.classselector.client.RespawnVotingState
 import com.example.classselector.kit.ClassKit
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -38,7 +36,6 @@ class SyncClassesPacket(private val activeInCurrentWorld: Boolean, private val j
                     ClassSelectionState.promptOpen = false
                     ClassSelectionState.selectionRequired = false
                     ClassSelectionState.reminderCooldownTicks = 0
-                    RespawnVotingState.snapshot = RespawnVotingSnapshot(false, false, 0, null, emptyList())
                 }
             }
             ctx.packetHandled = true

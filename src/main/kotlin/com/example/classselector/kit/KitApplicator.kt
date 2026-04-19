@@ -1,7 +1,5 @@
 package com.example.classselector.kit
 
-import com.example.classselector.respawn.RespawnHubService
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EquipmentSlot
@@ -19,13 +17,6 @@ object KitApplicator {
         player.inventory.clearContent()
         kit.items.forEach { giveItemToConfiguredSlot(player, it) }
         player.persistentData.putString(SELECTED_CLASS_TAG, kit.id)
-        RespawnHubService.onVotingEligibilityChanged(player.server)
-        val released = RespawnHubService.tryReleasePlayerFromSpectator(player)
-        if (released) {
-            player.sendSystemMessage(Component.literal("Class selected: ${kit.title}"))
-        } else {
-            player.sendSystemMessage(Component.literal("Class selected: ${kit.title}. Waiting for a finalized spawn location."))
-        }
     }
 
     private fun giveItemToConfiguredSlot(player: ServerPlayer, kitItem: KitItem) {
@@ -34,26 +25,17 @@ object KitApplicator {
         if (item == Items.AIR) return
 
         val stack = ItemStack(item, kitItem.count.coerceAtLeast(1))
-        val slot = kitItem.slot?.lowercase()
-
-        when {
-            slot == null || slot == "inventory" -> player.addItem(stack)
-            slot.startsWith("armor:") -> equipArmorSlot(player, stack, slot.removePrefix("armor:"))
-            slot.startsWith("curio:") -> equipCurioSlot(player, stack, slot.removePrefix("curio:"))
-            else -> player.addItem(stack)
+        when (val slotTarget = KitSlot.parse(kitItem.slot)) {
+            KitSlotTarget.Inventory -> player.addItem(stack)
+            KitSlotTarget.Offhand -> equipEquipmentSlot(player, stack, EquipmentSlot.OFFHAND)
+            is KitSlotTarget.Armor -> equipEquipmentSlot(player, stack, slotTarget.slot)
+            is KitSlotTarget.Curio -> equipCurioSlot(player, stack, slotTarget.identifier)
+            is KitSlotTarget.Unknown -> player.addItem(stack)
         }
     }
 
-    private fun equipArmorSlot(player: ServerPlayer, stack: ItemStack, armorSlot: String) {
-        val target = when (armorSlot) {
-            "head", "helmet" -> EquipmentSlot.HEAD
-            "chest", "chestplate" -> EquipmentSlot.CHEST
-            "legs", "leggings" -> EquipmentSlot.LEGS
-            "feet", "boots" -> EquipmentSlot.FEET
-            else -> null
-        }
-
-        if (target == null || !player.getItemBySlot(target).isEmpty) {
+    private fun equipEquipmentSlot(player: ServerPlayer, stack: ItemStack, target: EquipmentSlot) {
+        if (!player.getItemBySlot(target).isEmpty) {
             player.addItem(stack)
             return
         }

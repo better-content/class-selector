@@ -2,9 +2,10 @@ package com.example.classselector.client
 
 import com.example.classselector.kit.ClassKit
 import com.example.classselector.kit.KitItem
-import com.example.classselector.client.ClassSelectionState
-import com.example.classselector.network.ChooseClassPacket
+import com.example.classselector.kit.KitSlot
+import com.example.classselector.kit.KitSlotTarget
 import com.example.classselector.network.ClassSelectorNetwork
+import com.example.classselector.network.FinalizeSelectionPacket
 import com.mojang.authlib.GameProfile
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.Button
@@ -20,20 +21,37 @@ import net.minecraftforge.registries.ForgeRegistries
 import java.util.UUID
 
 class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.literal("Select Class")) {
+    private companion object {
+        private const val PREVIEW_PROFILE_SEED = "classselector-preview"
+    }
+
     private var selectedKitIndex: Int = 0
     private val classButtons: MutableList<Button> = mutableListOf()
-    private var selectClassButton: Button? = null
-    private var respawnVotingButton: Button? = null
+    private var lockClassButton: Button? = null
+    private var unlockClassButton: Button? = null
+    private var lockRespawnButton: Button? = null
+    private var clearRespawnButton: Button? = null
+    private var beginButton: Button? = null
     private var hoveredItem: ItemStack = ItemStack.EMPTY
 
     override fun init() {
         classButtons.clear()
 
         if (kits.isEmpty()) {
-            selectClassButton = null
+            lockClassButton = null
+            unlockClassButton = null
+            lockRespawnButton = null
+            clearRespawnButton = null
+            beginButton = null
             return
         }
 
+        ClassSelectionState.lockedClassId?.let { lockedId ->
+            val lockedIndex = kits.indexOfFirst { it.id == lockedId }
+            if (lockedIndex >= 0) {
+                selectedKitIndex = lockedIndex
+            }
+        }
         selectedKitIndex = selectedKitIndex.coerceIn(0, kits.lastIndex)
 
         val totalLayoutWidth = 560
@@ -57,32 +75,66 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
             classButtons += button
         }
 
-        selectClassButton = addRenderableWidget(
-            Button.builder(Component.literal("Select Class")) {
+        lockClassButton = addRenderableWidget(
+            Button.builder(Component.literal("Lock Selected Class")) {
                 val selected = kits.getOrNull(selectedKitIndex) ?: return@builder
+                ClassSelectionState.lockedClassId = selected.id
+                refreshButtonState()
+            }.pos(middlePanelX, height - 68).size(150, 20).build()
+        )
+
+        unlockClassButton = addRenderableWidget(
+            Button.builder(Component.literal("Unlock Class")) {
+                ClassSelectionState.lockedClassId = null
+                refreshButtonState()
+            }.pos(middlePanelX + 160, height - 68).size(100, 20).build()
+        )
+
+        lockRespawnButton = addRenderableWidget(
+            Button.builder(Component.literal("Lock Current Respawn")) {
+                val player = minecraft?.player ?: return@builder
+                val dim = player.level().dimension().location().toString()
+                ClassSelectionState.lockedRespawn = PendingRespawnSelection(dim, player.blockX, player.blockY, player.blockZ)
+                refreshButtonState()
+            }.pos(middlePanelX, height - 42).size(150, 20).build()
+        )
+
+        clearRespawnButton = addRenderableWidget(
+            Button.builder(Component.literal("Unlock Respawn")) {
+                ClassSelectionState.lockedRespawn = null
+                refreshButtonState()
+            }.pos(middlePanelX + 160, height - 42).size(100, 20).build()
+        )
+
+        beginButton = addRenderableWidget(
+            Button.builder(Component.literal("Begin")) {
+                val classId = ClassSelectionState.lockedClassId ?: return@builder
+                val respawn = ClassSelectionState.lockedRespawn ?: return@builder
                 ClassSelectionState.selectionRequired = false
                 ClassSelectionState.promptOpen = false
                 ClassSelectionState.reminderCooldownTicks = 0
-                ClassSelectorNetwork.CHANNEL.sendToServer(ChooseClassPacket(selected.id))
+                ClassSelectorNetwork.CHANNEL.sendToServer(
+                    FinalizeSelectionPacket(classId, respawn.dim, respawn.x, respawn.y, respawn.z)
+                )
                 onClose()
-            }.pos(middlePanelX + middlePanelWidth - 130, height - 42).size(130, 20).build()
-        )
-
-        respawnVotingButton = addRenderableWidget(
-            Button.builder(Component.literal("Respawn Voting")) {
-                minecraft?.setScreen(RespawnVotingScreen())
-            }.pos(middlePanelX, height - 42).size(140, 20).build()
+            }.pos(middlePanelX + middlePanelWidth - 90, height - 42).size(90, 20).build()
         )
 
         refreshButtonState()
     }
 
     private fun refreshButtonState() {
+        val selected = kits.getOrNull(selectedKitIndex)
+        val lockedClassId = ClassSelectionState.lockedClassId
+        val lockedRespawn = ClassSelectionState.lockedRespawn
         classButtons.forEachIndexed { index, button ->
             button.active = index != selectedKitIndex
         }
-        selectClassButton?.active = ClassSelectionState.activeInCurrentWorld && kits.isNotEmpty()
-        respawnVotingButton?.active = ClassSelectionState.activeInCurrentWorld && RespawnVotingState.snapshot.canVote
+        lockClassButton?.active = ClassSelectionState.activeInCurrentWorld && selected != null && selected.id != lockedClassId
+        unlockClassButton?.active = ClassSelectionState.activeInCurrentWorld && lockedClassId != null
+        lockRespawnButton?.active = ClassSelectionState.activeInCurrentWorld
+        clearRespawnButton?.active = ClassSelectionState.activeInCurrentWorld && lockedRespawn != null
+        beginButton?.active = ClassSelectionState.activeInCurrentWorld && lockedClassId != null && lockedRespawn != null
     }
 
     override fun render(gui: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
@@ -119,16 +171,40 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
         gui.drawWordWrap(
             font,
             Component.literal(
-                if (RespawnVotingState.snapshot.canVote)
-                    "Press Esc to close this screen and survey the world in spectator before choosing a class start location. Press V for respawn voting."
-                else
-                    "Press Esc to close this screen and survey the world in spectator before choosing a class start location."
+                "Lock your class and lock a respawn point separately. You can unlock either one and change it before pressing Begin."
             ),
             panelX,
             panelY + 72,
             panelWidth - 8,
             0xE6D28C
         )
+
+        val lockedClass = kits.firstOrNull { it.id == ClassSelectionState.lockedClassId }
+        gui.drawString(font, Component.literal("Locked class"), panelX, panelY + 104, 0xFFFFFF)
+        gui.drawWordWrap(
+            font,
+            Component.literal(lockedClass?.title ?: "None"),
+            panelX + 92,
+            panelY + 104,
+            panelWidth - 100,
+            if (lockedClass != null) 0x9FE3A0 else 0xC8A0A0
+        )
+
+        val currentPlayer = minecraft?.player
+        val currentDim = currentPlayer?.level()?.dimension()?.location()?.toString() ?: "unknown"
+        val currentCoords = currentPlayer?.let { "${it.blockX} ${it.blockY} ${it.blockZ}" } ?: "unknown"
+        gui.drawString(font, Component.literal("Current spot"), panelX, panelY + 122, 0xFFFFFF)
+        gui.drawWordWrap(font, Component.literal(currentDim), panelX + 92, panelY + 122, panelWidth - 100, 0xA0A0A0)
+        gui.drawString(font, Component.literal(currentCoords), panelX + 92, panelY + 136, 0xA0A0A0)
+
+        val lockedRespawn = ClassSelectionState.lockedRespawn
+        gui.drawString(font, Component.literal("Locked respawn"), panelX, panelY + 154, 0xFFFFFF)
+        if (lockedRespawn == null) {
+            gui.drawString(font, Component.literal("None"), panelX + 92, panelY + 154, 0xC8A0A0)
+        } else {
+            gui.drawWordWrap(font, Component.literal(lockedRespawn.dim), panelX + 92, panelY + 154, panelWidth - 100, 0x9FE3A0)
+            gui.drawString(font, Component.literal("${lockedRespawn.x} ${lockedRespawn.y} ${lockedRespawn.z}"), panelX + 92, panelY + 168, 0x9FE3A0)
+        }
 
         buildPreviewPlayer(selected)?.let { previewPlayer ->
             InventoryScreen.renderEntityInInventoryFollowsMouse(
@@ -142,8 +218,8 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
             )
         }
 
-        gui.drawString(font, Component.literal("Kit items"), panelX, panelY + 118, 0xFFFFFF)
-        renderKitItems(gui, selected, panelX, panelY + 132, mouseX, mouseY)
+        gui.drawString(font, Component.literal("Kit items"), panelX, panelY + 196, 0xFFFFFF)
+        renderKitItems(gui, selected, panelX, panelY + 210, mouseX, mouseY)
 
         hoveredItem.takeIf { !it.isEmpty }?.let {
             gui.renderTooltip(font, it, mouseX, mouseY)
@@ -188,7 +264,7 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
         val level = mc.level ?: return null
         val localPlayer = mc.player
         val baseProfile = localPlayer?.gameProfile
-        val previewProfile = GameProfile(UUID.nameUUIDFromBytes("classselector-preview".toByteArray()), baseProfile?.name ?: "Preview")
+        val previewProfile = GameProfile(UUID.nameUUIDFromBytes(PREVIEW_PROFILE_SEED.toByteArray()), baseProfile?.name ?: "Preview")
         val preview = net.minecraft.client.player.RemotePlayer(level, previewProfile)
 
         preview.setPos(0.0, 0.0, 0.0)
@@ -208,41 +284,29 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
 
     private fun equipPreviewItem(player: net.minecraft.client.player.RemotePlayer, kitItem: KitItem, index: Int) {
         val stack = resolveStack(kitItem) ?: return
-        val slot = kitItem.slot?.lowercase()
-
-        when {
-            slot == null || slot == "inventory" -> {
+        when (val slotTarget = KitSlot.parse(kitItem.slot)) {
+            KitSlotTarget.Inventory -> {
                 if (index == firstHandItemIndex()) {
                     player.setItemSlot(EquipmentSlot.MAINHAND, stack)
                 }
             }
-            slot == "offhand" -> player.setItemSlot(EquipmentSlot.OFFHAND, stack)
-            slot.startsWith("armor:") -> {
-                val equipmentSlot = when (slot.removePrefix("armor:")) {
-                    "head", "helmet" -> EquipmentSlot.HEAD
-                    "chest", "chestplate" -> EquipmentSlot.CHEST
-                    "legs", "leggings" -> EquipmentSlot.LEGS
-                    "feet", "boots" -> EquipmentSlot.FEET
-                    else -> null
-                }
-                if (equipmentSlot != null) {
-                    player.setItemSlot(equipmentSlot, stack)
-                }
-            }
+            KitSlotTarget.Offhand -> player.setItemSlot(EquipmentSlot.OFFHAND, stack)
+            is KitSlotTarget.Armor -> player.setItemSlot(slotTarget.slot, stack)
+            is KitSlotTarget.Curio -> {}
+            is KitSlotTarget.Unknown -> {}
         }
     }
 
     private fun firstHandItemIndex(): Int = kits.getOrNull(selectedKitIndex)
         ?.items
         ?.indexOfFirst { item ->
-            val slot = item.slot?.lowercase()
-            slot == null || slot == "inventory"
+            KitSlot.parse(item.slot) == KitSlotTarget.Inventory
         }
         ?: -1
 
     private fun toDisplayEntry(kitItem: KitItem): DisplayItemEntry? {
         val stack = resolveStack(kitItem) ?: return null
-        return DisplayItemEntry(stack, toSlotLabel(kitItem.slot))
+        return DisplayItemEntry(stack, KitSlot.label(kitItem.slot))
     }
 
     private fun resolveStack(kitItem: KitItem): ItemStack? {
@@ -250,16 +314,6 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
         val item = ForgeRegistries.ITEMS.getValue(itemId) ?: return null
         if (item == Items.AIR) return null
         return ItemStack(item, kitItem.count.coerceAtLeast(1))
-    }
-
-    private fun toSlotLabel(slot: String?): String? = when (slot?.lowercase()) {
-        null, "inventory" -> null
-        "offhand" -> "Off"
-        "armor:head", "armor:helmet" -> "Head"
-        "armor:chest", "armor:chestplate" -> "Chest"
-        "armor:legs", "armor:leggings" -> "Legs"
-        "armor:feet", "armor:boots" -> "Feet"
-        else -> slot.substringAfter(':').replaceFirstChar { it.titlecase() }
     }
 
     private data class DisplayItemEntry(val stack: ItemStack, val slotLabel: String?)

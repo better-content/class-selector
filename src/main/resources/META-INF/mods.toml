@@ -6,9 +6,11 @@ license="MIT"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-authors="Codex"
+displayURL="https://github.com/geraldsummers/classselector"
+issueTrackerURL="https://github.com/geraldsummers/classselector/issues"
+authors="Gerald Summers"
 description='''
-Class selection mod with JSON-defined starter kits.
+Class selection mod with JSON-defined starter kits, spectator gating for new players, and per-player permanent respawn selection.
 '''
 
 [[dependencies.${mod_id}]]
@@ -30,4 +32,11 @@ Class selection mod with JSON-defined starter kits.
     mandatory=true
     versionRange="[${kotlinforforge_version},)"
     ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="curios"
+    mandatory=true
+    versionRange="[${curios_version},)"
+    ordering="AFTER"
     side="BOTH"

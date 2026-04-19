@@ -5,7 +5,7 @@ import com.example.classselector.kit.KitApplicator
 import com.example.classselector.network.ClassSelectorNetwork
 import com.example.classselector.network.RequestOpenMenuPacket
 import com.example.classselector.network.SyncClassesPacket
-import com.example.classselector.respawn.RespawnHubService
+import com.example.classselector.respawn.PersonalRespawnService
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.GameType
@@ -75,7 +75,6 @@ object ServerEvents {
             PacketDistributor.PLAYER.with { player },
             SyncClassesPacket.fromKits(activeInWorld, kits)
         )
-        RespawnHubService.syncVotingState(player)
 
         if (!activeInWorld) {
             return
@@ -88,16 +87,19 @@ object ServerEvents {
             return
         }
 
-        RespawnHubService.tryReleasePlayerFromSpectator(player)
+        PersonalRespawnService.releasePlayerFromSpectator(player)
     }
 
     @JvmStatic
     @SubscribeEvent
     fun onClone(event: PlayerEvent.Clone) {
         if (!event.isWasDeath) return
-        val selected = event.original.persistentData.getString(KitApplicator.SELECTED_CLASS_TAG)
+        val original = event.original as? ServerPlayer ?: return
+        val cloned = event.entity as? ServerPlayer ?: return
+        val selected = original.persistentData.getString(KitApplicator.SELECTED_CLASS_TAG)
         if (selected.isNotBlank()) {
-            event.entity.persistentData.putString(KitApplicator.SELECTED_CLASS_TAG, selected)
+            cloned.persistentData.putString(KitApplicator.SELECTED_CLASS_TAG, selected)
         }
+        PersonalRespawnService.copyRespawnPoint(original, cloned)
     }
 }
