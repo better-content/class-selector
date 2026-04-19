@@ -7,6 +7,7 @@ import com.mojang.brigadier.Command
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
 import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceKey
@@ -15,6 +16,7 @@ import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.GameType
+import net.minecraft.world.level.block.Blocks
 import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.event.TickEvent
 import net.minecraftforge.event.entity.player.PlayerEvent
@@ -39,6 +41,7 @@ private const val SOUND_PITCH_WARDEN = 0.8
 private const val SOUND_PITCH_EVOKER = 0.9
 
 data class PersonalRespawnPoint(val dim: String, val x: Int, val y: Int, val z: Int)
+data class PreparedRespawnPoint(val point: PersonalRespawnPoint, val sitePrepared: Boolean, val locationAdjusted: Boolean)
 
 object PersonalRespawnService {
     private const val RESPAWN_DIM_TAG = "classselector:respawn_dim"
@@ -65,8 +68,7 @@ object PersonalRespawnService {
             y = player.blockY,
             z = player.blockZ
         )
-        setRespawnPoint(player, point)
-        return point
+        return setRespawnPoint(player, point).point
     }
 
     fun hasRespawnPoint(player: ServerPlayer): Boolean =
@@ -85,8 +87,10 @@ object PersonalRespawnService {
         )
     }
 
-    fun setRespawnPoint(player: ServerPlayer, point: PersonalRespawnPoint) {
-        saveRespawnPoint(player, point)
+    fun setRespawnPoint(player: ServerPlayer, point: PersonalRespawnPoint): PreparedRespawnPoint {
+        val preparedPoint = prepareRespawnPoint(player.server, point)
+        saveRespawnPoint(player, preparedPoint.point)
+        return preparedPoint
     }
 
     fun clearRespawnPoint(player: ServerPlayer) {
@@ -139,6 +143,53 @@ object PersonalRespawnService {
         player.setRespawnPosition(levelKey, BlockPos(point.x, point.y, point.z), player.yRot, true, false)
     }
 
+    private fun prepareRespawnPoint(server: MinecraftServer, requestedPoint: PersonalRespawnPoint): PreparedRespawnPoint {
+        val level = resolveLevel(server, requestedPoint.dim)
+            ?: return PreparedRespawnPoint(requestedPoint, sitePrepared = false, locationAdjusted = false)
+
+        val origin = clampFeetPos(level, BlockPos(requestedPoint.x, requestedPoint.y, requestedPoint.z))
+        val point = PersonalRespawnPoint(requestedPoint.dim, origin.x, origin.y, origin.z)
+        val wasValid = isValidFeetPos(level, origin)
+        if (!wasValid) {
+            prepareRespawnSite(level, point)
+        }
+
+        return PreparedRespawnPoint(
+            point = point,
+            sitePrepared = !wasValid,
+            locationAdjusted = point != requestedPoint
+        )
+    }
+
+    private fun clampFeetPos(level: ServerLevel, pos: BlockPos): BlockPos {
+        val clampedY = pos.y.coerceIn(level.minBuildHeight + 1, level.maxBuildHeight - 2)
+        return BlockPos(pos.x, clampedY, pos.z)
+    }
+
+    private fun isValidFeetPos(level: ServerLevel, feetPos: BlockPos): Boolean {
+        val basePos = feetPos.below()
+        val headPos = feetPos.above()
+        if (feetPos.y < level.minBuildHeight + 1 || headPos.y >= level.maxBuildHeight) return false
+        if (!level.isInWorldBounds(basePos) || !level.isInWorldBounds(feetPos) || !level.isInWorldBounds(headPos)) return false
+
+        val baseState = level.getBlockState(basePos)
+        val feetState = level.getBlockState(feetPos)
+        val headState = level.getBlockState(headPos)
+
+        return baseState.isFaceSturdy(level, basePos, Direction.UP) &&
+            feetState.isAir &&
+            headState.isAir
+    }
+
+    private fun prepareRespawnSite(level: ServerLevel, point: PersonalRespawnPoint) {
+        val feetPos = BlockPos(point.x, point.y, point.z)
+        val basePos = feetPos.below()
+        val headPos = feetPos.above()
+        level.setBlockAndUpdate(basePos, Blocks.CRYING_OBSIDIAN.defaultBlockState())
+        level.removeBlock(feetPos, false)
+        level.removeBlock(headPos, false)
+    }
+
     private fun clearVanillaRespawnPosition(player: ServerPlayer) {
         val method = ServerPlayer::class.java.getMethod(
             "setRespawnPosition",
@@ -153,6 +204,9 @@ object PersonalRespawnService {
 
     private fun teleportPlayerToRespawnPoint(server: MinecraftServer, player: ServerPlayer, point: PersonalRespawnPoint) {
         val level = resolveLevel(server, point.dim) ?: player.serverLevel()
+        if (!isValidFeetPos(level, BlockPos(point.x, point.y, point.z))) {
+            prepareRespawnSite(level, point)
+        }
         player.teleportTo(level, point.x + 0.5, point.y.toDouble(), point.z + 0.5, player.yRot, player.xRot)
         schedule(server, 1) {
             playRespawnSoundForPlayer(server, player, point)

@@ -42,14 +42,33 @@ class ClassKitRepositoryTest {
                 blurb = "Defensive",
                 description = "Uses a shield.",
                 items = listOf(
-                    KitItem(item = "minecraft:shield", slot = "offhand"),
-                    KitItem(item = "minecraft:iron_sword", slot = "inventory")
+                    KitItem(item = "minecraft:shield", slot = "weapon.offhand"),
+                    KitItem(item = "minecraft:iron_sword", slot = "hotbar.0")
                 )
             )
         )
 
         val validated = ClassKitRepository.validate(kits)
-        assertEquals("offhand", validated.first().items.first().slot)
+        assertEquals("weapon.offhand", validated.first().items.first().slot)
+        assertEquals("hotbar.0", validated.first().items[1].slot)
+    }
+
+    @Test
+    fun validatesItemSpecsWithNbtPayload() {
+        val kits = listOf(
+            ClassKit(
+                id = "miner",
+                title = "Miner",
+                blurb = "NBT",
+                description = "Contains a tool with NBT.",
+                items = listOf(
+                    KitItem(item = "minecraft:iron_pickaxe{Damage:0}", slot = "hotbar.0")
+                )
+            )
+        )
+
+        val validated = ClassKitRepository.validate(kits)
+        assertEquals("minecraft:iron_pickaxe{Damage:0}", validated.first().items.first().item)
     }
 
     @Test

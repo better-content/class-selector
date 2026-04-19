@@ -1,12 +1,9 @@
 package com.example.classselector.kit
 
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.Items
 import net.minecraftforge.fml.ModList
-import net.minecraftforge.registries.ForgeRegistries
 
 object KitApplicator {
     const val SELECTED_CLASS_TAG: String = "classselector:selected_class"
@@ -20,18 +17,25 @@ object KitApplicator {
     }
 
     private fun giveItemToConfiguredSlot(player: ServerPlayer, kitItem: KitItem) {
-        val itemId = ResourceLocation.tryParse(kitItem.item) ?: return
-        val item = ForgeRegistries.ITEMS.getValue(itemId) ?: return
-        if (item == Items.AIR) return
-
-        val stack = ItemStack(item, kitItem.count.coerceAtLeast(1))
+        val stack = KitItemStackFactory.create(kitItem.item, kitItem.count) ?: return
         when (val slotTarget = KitSlot.parse(kitItem.slot)) {
             KitSlotTarget.Inventory -> player.addItem(stack)
+            is KitSlotTarget.Hotbar -> placeInHotbar(player, slotTarget.index, stack)
             KitSlotTarget.Offhand -> equipEquipmentSlot(player, stack, EquipmentSlot.OFFHAND)
             is KitSlotTarget.Armor -> equipEquipmentSlot(player, stack, slotTarget.slot)
             is KitSlotTarget.Curio -> equipCurioSlot(player, stack, slotTarget.identifier)
             is KitSlotTarget.Unknown -> player.addItem(stack)
         }
+    }
+
+    private fun placeInHotbar(player: ServerPlayer, slotIndex: Int, stack: ItemStack) {
+        val inventory = player.inventory
+        val existing = inventory.getItem(slotIndex)
+        if (!existing.isEmpty) {
+            player.addItem(existing)
+        }
+        inventory.setItem(slotIndex, stack)
+        inventory.setChanged()
     }
 
     private fun equipEquipmentSlot(player: ServerPlayer, stack: ItemStack, target: EquipmentSlot) {

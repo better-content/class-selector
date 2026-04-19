@@ -4,6 +4,7 @@ import net.minecraft.world.entity.EquipmentSlot
 
 sealed interface KitSlotTarget {
     data object Inventory : KitSlotTarget
+    data class Hotbar(val index: Int) : KitSlotTarget
     data object Offhand : KitSlotTarget
     data class Armor(val slot: EquipmentSlot) : KitSlotTarget
     data class Curio(val identifier: String) : KitSlotTarget
@@ -17,8 +18,21 @@ object KitSlot {
             return KitSlotTarget.Inventory
         }
 
-        if (slot == "offhand") {
+        if (slot == "offhand" || slot == "weapon.offhand") {
             return KitSlotTarget.Offhand
+        }
+
+        if (slot == "mainhand" || slot == "weapon.mainhand") {
+            return KitSlotTarget.Hotbar(0)
+        }
+
+        if (slot.startsWith("hotbar.")) {
+            val index = slot.removePrefix("hotbar.").toIntOrNull()
+            return if (index != null && index in 0..8) {
+                KitSlotTarget.Hotbar(index)
+            } else {
+                KitSlotTarget.Unknown(slot)
+            }
         }
 
         if (slot.startsWith("armor:")) {
@@ -49,6 +63,7 @@ object KitSlot {
         val target = parse(rawSlot)
         return when (target) {
         KitSlotTarget.Inventory -> null
+        is KitSlotTarget.Hotbar -> "${target.index + 1}"
         KitSlotTarget.Offhand -> "Off"
         is KitSlotTarget.Armor -> when (target.slot) {
             EquipmentSlot.HEAD -> "Head"

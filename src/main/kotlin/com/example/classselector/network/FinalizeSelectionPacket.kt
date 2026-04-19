@@ -57,13 +57,22 @@ class FinalizeSelectionPacket(
                     return@enqueueWork
                 }
 
-                val point = PersonalRespawnPoint(packet.dimensionId, packet.x, packet.y, packet.z)
-                PersonalRespawnService.setRespawnPoint(player, point)
+                val requestedPoint = PersonalRespawnPoint(packet.dimensionId, packet.x, packet.y, packet.z)
+                val preparedPoint = PersonalRespawnService.setRespawnPoint(player, requestedPoint)
+                val resolvedPoint = preparedPoint.point
                 KitApplicator.apply(player, kit)
                 PersonalRespawnService.releasePlayerFromSpectator(player)
-                player.sendSystemMessage(
-                    Component.literal("Class selected: ${kit.title}. Permanent respawn set to ${point.dim} ${point.x} ${point.y} ${point.z}.")
-                )
+                val message = when {
+                    preparedPoint.sitePrepared && preparedPoint.locationAdjusted ->
+                        "Class selected: ${kit.title}. Permanent respawn prepared at ${resolvedPoint.dim} ${resolvedPoint.x} ${resolvedPoint.y} ${resolvedPoint.z}."
+                    preparedPoint.sitePrepared ->
+                        "Class selected: ${kit.title}. Permanent respawn prepared in place at ${resolvedPoint.dim} ${resolvedPoint.x} ${resolvedPoint.y} ${resolvedPoint.z}."
+                    preparedPoint.locationAdjusted ->
+                        "Class selected: ${kit.title}. Permanent respawn set to ${resolvedPoint.dim} ${resolvedPoint.x} ${resolvedPoint.y} ${resolvedPoint.z}."
+                    else ->
+                        "Class selected: ${kit.title}. Permanent respawn set to ${resolvedPoint.dim} ${resolvedPoint.x} ${resolvedPoint.y} ${resolvedPoint.z}."
+                }
+                player.sendSystemMessage(Component.literal(message))
             }
             ctx.packetHandled = true
         }

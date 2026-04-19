@@ -2,6 +2,7 @@ package com.example.classselector.client
 
 import com.example.classselector.kit.ClassKit
 import com.example.classselector.kit.KitItem
+import com.example.classselector.kit.KitItemStackFactory
 import com.example.classselector.kit.KitSlot
 import com.example.classselector.kit.KitSlotTarget
 import com.example.classselector.network.ClassSelectorNetwork
@@ -12,17 +13,43 @@ import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.inventory.InventoryScreen
 import net.minecraft.network.chat.Component
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.Pose
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.Items
-import net.minecraftforge.registries.ForgeRegistries
 import java.util.UUID
 
-class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.literal("Select Class")) {
+class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.literal("Class Lock-In")) {
     private companion object {
         private const val PREVIEW_PROFILE_SEED = "classselector-preview"
+        private const val OUTER_PADDING = 14
+        private const val TOP_MARGIN = 28
+        private const val BOTTOM_MARGIN = 16
+        private const val PANEL_GAP = 10
+        private const val PANEL_BACKGROUND = 0xC8141820.toInt()
+        private const val PANEL_BORDER = 0xFF33404D.toInt()
+        private const val PANEL_ACCENT = 0xFF6E8CA6.toInt()
+        private const val TEXT_PRIMARY = 0xF4F0E6
+        private const val TEXT_MUTED = 0xAEB7C1
+        private const val TEXT_WARM = 0xE0C58F
+        private const val TEXT_GOOD = 0xA7E0A4
+        private const val TEXT_BAD = 0xD58A8A
+        private const val BUTTON_HEIGHT = 20
+    }
+
+    private data class Layout(
+        val leftX: Int,
+        val centerX: Int,
+        val rightX: Int,
+        val top: Int,
+        val bottom: Int,
+        val leftWidth: Int,
+        val centerWidth: Int,
+        val rightWidth: Int,
+        val height: Int
+    ) {
+        val leftRight: Int get() = leftX + leftWidth
+        val centerRight: Int get() = centerX + centerWidth
+        val rightRight: Int get() = rightX + rightWidth
     }
 
     private var selectedKitIndex: Int = 0
@@ -54,57 +81,25 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
         }
         selectedKitIndex = selectedKitIndex.coerceIn(0, kits.lastIndex)
 
-        val totalLayoutWidth = 560
-        val listColumnWidth = 140
-        val middlePanelWidth = 260
-        val layoutLeft = (width - totalLayoutWidth) / 2
-        val leftColumnX = layoutLeft
-        val middlePanelX = layoutLeft + listColumnWidth + 20
-        val listTop = 36
-        val listButtonWidth = 140
-        val listButtonHeight = 20
+        val layout = computeLayout()
+        val listButtonX = layout.leftX + 8
+        val listButtonWidth = layout.leftWidth - 16
+        val listTop = layout.top + 34
 
         kits.forEachIndexed { index, kit ->
-            val y = listTop + index * 24
+            val y = listTop + index * (BUTTON_HEIGHT + 4)
             val button = addRenderableWidget(
                 Button.builder(Component.literal(kit.title)) {
                     selectedKitIndex = index
                     refreshButtonState()
-                }.pos(leftColumnX, y).size(listButtonWidth, listButtonHeight).build()
+                }.pos(listButtonX, y).size(listButtonWidth, BUTTON_HEIGHT).build()
             )
             classButtons += button
         }
 
-        lockClassButton = addRenderableWidget(
-            Button.builder(Component.literal("Lock Selected Class")) {
-                val selected = kits.getOrNull(selectedKitIndex) ?: return@builder
-                ClassSelectionState.lockedClassId = selected.id
-                refreshButtonState()
-            }.pos(middlePanelX, height - 68).size(150, 20).build()
-        )
-
-        unlockClassButton = addRenderableWidget(
-            Button.builder(Component.literal("Unlock Class")) {
-                ClassSelectionState.lockedClassId = null
-                refreshButtonState()
-            }.pos(middlePanelX + 160, height - 68).size(100, 20).build()
-        )
-
-        lockRespawnButton = addRenderableWidget(
-            Button.builder(Component.literal("Lock Current Respawn")) {
-                val player = minecraft?.player ?: return@builder
-                val dim = player.level().dimension().location().toString()
-                ClassSelectionState.lockedRespawn = PendingRespawnSelection(dim, player.blockX, player.blockY, player.blockZ)
-                refreshButtonState()
-            }.pos(middlePanelX, height - 42).size(150, 20).build()
-        )
-
-        clearRespawnButton = addRenderableWidget(
-            Button.builder(Component.literal("Unlock Respawn")) {
-                ClassSelectionState.lockedRespawn = null
-                refreshButtonState()
-            }.pos(middlePanelX + 160, height - 42).size(100, 20).build()
-        )
+        val actionX = layout.rightX + 8
+        val actionWidth = layout.rightWidth - 16
+        val actionBottom = layout.bottom - 8
 
         beginButton = addRenderableWidget(
             Button.builder(Component.literal("Begin")) {
@@ -117,7 +112,38 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
                     FinalizeSelectionPacket(classId, respawn.dim, respawn.x, respawn.y, respawn.z)
                 )
                 onClose()
-            }.pos(middlePanelX + middlePanelWidth - 90, height - 42).size(90, 20).build()
+            }.pos(actionX, actionBottom - BUTTON_HEIGHT).size(actionWidth, BUTTON_HEIGHT).build()
+        )
+
+        clearRespawnButton = addRenderableWidget(
+            Button.builder(Component.literal("Unlock Respawn")) {
+                ClassSelectionState.lockedRespawn = null
+                refreshButtonState()
+            }.pos(actionX, actionBottom - (BUTTON_HEIGHT + 4) * 2).size(actionWidth, BUTTON_HEIGHT).build()
+        )
+
+        lockRespawnButton = addRenderableWidget(
+            Button.builder(Component.literal("Lock Current Respawn")) {
+                val player = minecraft?.player ?: return@builder
+                val dim = player.level().dimension().location().toString()
+                ClassSelectionState.lockedRespawn = PendingRespawnSelection(dim, player.blockX, player.blockY, player.blockZ)
+                refreshButtonState()
+            }.pos(actionX, actionBottom - (BUTTON_HEIGHT + 4) * 3).size(actionWidth, BUTTON_HEIGHT).build()
+        )
+
+        unlockClassButton = addRenderableWidget(
+            Button.builder(Component.literal("Unlock Class")) {
+                ClassSelectionState.lockedClassId = null
+                refreshButtonState()
+            }.pos(actionX, actionBottom - (BUTTON_HEIGHT + 4) * 4).size(actionWidth, BUTTON_HEIGHT).build()
+        )
+
+        lockClassButton = addRenderableWidget(
+            Button.builder(Component.literal("Lock Selected Class")) {
+                val selected = kits.getOrNull(selectedKitIndex) ?: return@builder
+                ClassSelectionState.lockedClassId = selected.id
+                refreshButtonState()
+            }.pos(actionX, actionBottom - (BUTTON_HEIGHT + 4) * 5).size(actionWidth, BUTTON_HEIGHT).build()
         )
 
         refreshButtonState()
@@ -127,9 +153,17 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
         val selected = kits.getOrNull(selectedKitIndex)
         val lockedClassId = ClassSelectionState.lockedClassId
         val lockedRespawn = ClassSelectionState.lockedRespawn
+
         classButtons.forEachIndexed { index, button ->
+            val kit = kits[index]
+            val marker = buildString {
+                if (index == selectedKitIndex) append("> ")
+                if (kit.id == lockedClassId) append("[L] ")
+            }
+            button.message = Component.literal(marker + kit.title)
             button.active = index != selectedKitIndex
         }
+
         lockClassButton?.active = ClassSelectionState.activeInCurrentWorld && selected != null && selected.id != lockedClassId
         unlockClassButton?.active = ClassSelectionState.activeInCurrentWorld && lockedClassId != null
         lockRespawnButton?.active = ClassSelectionState.activeInCurrentWorld
@@ -140,86 +174,27 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
     override fun render(gui: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
         renderBackground(gui)
         hoveredItem = ItemStack.EMPTY
-        gui.drawCenteredString(font, title, width / 2, 12, 0xFFFFFF)
+
+        gui.fill(0, 0, width, height, 0xE10A0D12.toInt())
+        gui.drawCenteredString(font, title, width / 2, 10, TEXT_PRIMARY)
 
         if (kits.isEmpty()) {
-            gui.drawCenteredString(font, Component.literal("No classes available."), width / 2, height / 2 - 10, 0xFF7777)
-            gui.drawCenteredString(font, Component.literal("Ask an admin to configure class kits."), width / 2, height / 2 + 4, 0xAAAAAA)
+            gui.drawCenteredString(font, Component.literal("No classes available."), width / 2, height / 2 - 10, TEXT_BAD)
+            gui.drawCenteredString(font, Component.literal("Ask an admin to configure class kits."), width / 2, height / 2 + 4, TEXT_MUTED)
             super.render(gui, mouseX, mouseY, partialTick)
             return
         }
 
         val selected = kits[selectedKitIndex]
+        val layout = computeLayout()
 
-        val totalLayoutWidth = 560
-        val listColumnWidth = 140
-        val middlePanelWidth = 260
-        val layoutLeft = (width - totalLayoutWidth) / 2
-        val panelX = layoutLeft + listColumnWidth + 20
-        val panelY = 36
-        val panelWidth = middlePanelWidth
-        val panelHeight = height - 90
-        val previewCenterX = panelX + panelWidth + 110
-        val previewBaseY = panelY + 210
+        drawPanel(gui, layout.leftX, layout.top, layout.leftWidth, layout.height, "Classes")
+        drawPanel(gui, layout.centerX, layout.top, layout.centerWidth, layout.height, "Selected Class")
+        drawPanel(gui, layout.rightX, layout.top, layout.rightWidth, layout.height, "Lock-In Checklist")
 
-        gui.fill(panelX - 8, panelY - 8, panelX + panelWidth, panelY + panelHeight, 0x66000000)
-
-        gui.drawString(font, Component.literal(selected.title), panelX, panelY, 0xFFFFFF)
-        gui.drawString(font, Component.literal(selected.blurb), panelX, panelY + 14, 0xB0B0B0)
-
-        gui.drawWordWrap(font, Component.literal(selected.description), panelX, panelY + 32, panelWidth - 8, 0xDDDDDD)
-        gui.drawWordWrap(
-            font,
-            Component.literal(
-                "Lock your class and lock a respawn point separately. You can unlock either one and change it before pressing Begin."
-            ),
-            panelX,
-            panelY + 72,
-            panelWidth - 8,
-            0xE6D28C
-        )
-
-        val lockedClass = kits.firstOrNull { it.id == ClassSelectionState.lockedClassId }
-        gui.drawString(font, Component.literal("Locked class"), panelX, panelY + 104, 0xFFFFFF)
-        gui.drawWordWrap(
-            font,
-            Component.literal(lockedClass?.title ?: "None"),
-            panelX + 92,
-            panelY + 104,
-            panelWidth - 100,
-            if (lockedClass != null) 0x9FE3A0 else 0xC8A0A0
-        )
-
-        val currentPlayer = minecraft?.player
-        val currentDim = currentPlayer?.level()?.dimension()?.location()?.toString() ?: "unknown"
-        val currentCoords = currentPlayer?.let { "${it.blockX} ${it.blockY} ${it.blockZ}" } ?: "unknown"
-        gui.drawString(font, Component.literal("Current spot"), panelX, panelY + 122, 0xFFFFFF)
-        gui.drawWordWrap(font, Component.literal(currentDim), panelX + 92, panelY + 122, panelWidth - 100, 0xA0A0A0)
-        gui.drawString(font, Component.literal(currentCoords), panelX + 92, panelY + 136, 0xA0A0A0)
-
-        val lockedRespawn = ClassSelectionState.lockedRespawn
-        gui.drawString(font, Component.literal("Locked respawn"), panelX, panelY + 154, 0xFFFFFF)
-        if (lockedRespawn == null) {
-            gui.drawString(font, Component.literal("None"), panelX + 92, panelY + 154, 0xC8A0A0)
-        } else {
-            gui.drawWordWrap(font, Component.literal(lockedRespawn.dim), panelX + 92, panelY + 154, panelWidth - 100, 0x9FE3A0)
-            gui.drawString(font, Component.literal("${lockedRespawn.x} ${lockedRespawn.y} ${lockedRespawn.z}"), panelX + 92, panelY + 168, 0x9FE3A0)
-        }
-
-        buildPreviewPlayer(selected)?.let { previewPlayer ->
-            InventoryScreen.renderEntityInInventoryFollowsMouse(
-                gui,
-                previewCenterX,
-                previewBaseY,
-                52,
-                (previewCenterX - mouseX).toFloat(),
-                (previewBaseY - 44 - mouseY).toFloat(),
-                previewPlayer
-            )
-        }
-
-        gui.drawString(font, Component.literal("Kit items"), panelX, panelY + 196, 0xFFFFFF)
-        renderKitItems(gui, selected, panelX, panelY + 210, mouseX, mouseY)
+        renderLeftPanel(gui, layout)
+        renderCenterPanel(gui, layout, selected, mouseX, mouseY)
+        renderRightPanel(gui, layout, selected, mouseX, mouseY)
 
         hoveredItem.takeIf { !it.isEmpty }?.let {
             gui.renderTooltip(font, it, mouseX, mouseY)
@@ -230,22 +205,146 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
 
     override fun isPauseScreen(): Boolean = false
 
-    private fun renderKitItems(gui: GuiGraphics, kit: ClassKit, startX: Int, startY: Int, mouseX: Int, mouseY: Int) {
-        val displayItems = kit.items.mapNotNull(::toDisplayEntry)
-        val columns = 4
-        val cellWidth = 30
-        val cellHeight = 28
+    private fun renderLeftPanel(gui: GuiGraphics, layout: Layout) {
+        val lockedTitle = kits.firstOrNull { it.id == ClassSelectionState.lockedClassId }?.title ?: "None"
+        gui.drawString(font, Component.literal("Locked: $lockedTitle"), layout.leftX + 8, layout.bottom - 18, TEXT_MUTED)
+    }
 
-        displayItems.forEachIndexed { index, entry ->
+    private fun renderCenterPanel(gui: GuiGraphics, layout: Layout, kit: ClassKit, mouseX: Int, mouseY: Int) {
+        val innerX = layout.centerX + 10
+        val innerWidth = layout.centerWidth - 20
+        var y = layout.top + 10
+
+        gui.drawString(font, Component.literal(kit.title), innerX, y, TEXT_PRIMARY)
+        y += 15
+        gui.drawString(font, Component.literal(kit.blurb), innerX, y, TEXT_WARM)
+        y += 18
+
+        y += renderWrappedBlock(gui, Component.literal(kit.description), innerX, y, innerWidth, 5, TEXT_MUTED)
+        y += 8
+
+        gui.drawString(font, Component.literal("Flow"), innerX, y, TEXT_PRIMARY)
+        y += 12
+        y += renderWrappedBlock(
+            gui,
+            Component.literal("1. Inspect classes here. 2. Scout in spectator and lock a respawn point when ready. 3. Press Begin only after both locks are green."),
+            innerX,
+            y,
+            innerWidth,
+            4,
+            TEXT_WARM
+        )
+        y += 12
+
+        val itemsHeaderY = y
+        gui.drawString(font, Component.literal("Kit Items"), innerX, itemsHeaderY, TEXT_PRIMARY)
+        val itemsBoxY = itemsHeaderY + 12
+        val itemsBoxHeight = layout.bottom - itemsBoxY - 10
+        gui.fill(innerX - 2, itemsBoxY - 2, innerX + innerWidth + 2, itemsBoxY + itemsBoxHeight, 0x5511141A)
+        renderKitItems(gui, kit, innerX + 6, itemsBoxY + 6, innerWidth - 12, itemsBoxHeight - 12, mouseX, mouseY)
+    }
+
+    private fun renderRightPanel(gui: GuiGraphics, layout: Layout, kit: ClassKit, mouseX: Int, mouseY: Int) {
+        val innerX = layout.rightX + 10
+        val innerWidth = layout.rightWidth - 20
+        val previewBoxTop = layout.top + 10
+        val previewBoxHeight = 116
+        val previewBoxBottom = previewBoxTop + previewBoxHeight
+
+        gui.fill(innerX - 2, previewBoxTop - 2, innerX + innerWidth + 2, previewBoxBottom, 0x5511141A)
+        gui.drawCenteredString(font, Component.literal("Preview"), innerX + innerWidth / 2, previewBoxTop + 4, TEXT_PRIMARY)
+        buildPreviewPlayer(kit)?.let { previewPlayer ->
+            InventoryScreen.renderEntityInInventoryFollowsMouse(
+                gui,
+                innerX + innerWidth / 2,
+                previewBoxBottom - 10,
+                42,
+                (innerX + innerWidth / 2 - mouseX).toFloat(),
+                (previewBoxBottom - 48 - mouseY).toFloat(),
+                previewPlayer
+            )
+        }
+
+        var y = previewBoxBottom + 10
+        val lockedClass = kits.firstOrNull { it.id == ClassSelectionState.lockedClassId }
+        val lockedRespawn = ClassSelectionState.lockedRespawn
+        val currentPlayer = minecraft?.player
+        val currentDim = currentPlayer?.level()?.dimension()?.location()?.toString() ?: "unknown"
+        val currentCoords = currentPlayer?.let { "${it.blockX} ${it.blockY} ${it.blockZ}" } ?: "unknown"
+
+        gui.drawString(font, Component.literal("Status"), innerX, y, TEXT_PRIMARY)
+        y += 12
+        y += renderStatusBlock(gui, innerX, innerWidth, y, "Class lock", lockedClass?.title ?: "Missing", lockedClass != null)
+        y += 4
+        y += renderStatusBlock(gui, innerX, innerWidth, y, "Respawn lock", lockedRespawn?.let { "${it.x} ${it.y} ${it.z}" } ?: "Missing", lockedRespawn != null)
+        y += 10
+
+        gui.drawString(font, Component.literal("Current spot"), innerX, y, TEXT_PRIMARY)
+        y += 12
+        y += renderWrappedBlock(gui, Component.literal(currentDim), innerX, y, innerWidth, 2, TEXT_MUTED)
+        y += 2
+        gui.drawString(font, Component.literal(currentCoords), innerX, y, TEXT_MUTED)
+        y += 16
+
+        gui.drawString(font, Component.literal("Locked respawn"), innerX, y, TEXT_PRIMARY)
+        y += 12
+        if (lockedRespawn == null) {
+            gui.drawString(font, Component.literal("Not locked yet."), innerX, y, TEXT_BAD)
+        } else {
+            y += renderWrappedBlock(gui, Component.literal(lockedRespawn.dim), innerX, y, innerWidth, 2, TEXT_GOOD)
+            y += 2
+            gui.drawString(font, Component.literal("${lockedRespawn.x} ${lockedRespawn.y} ${lockedRespawn.z}"), innerX, y, TEXT_GOOD)
+        }
+    }
+
+    private fun renderStatusBlock(gui: GuiGraphics, x: Int, width: Int, y: Int, label: String, value: String, ready: Boolean): Int {
+        val color = if (ready) TEXT_GOOD else TEXT_BAD
+        gui.drawString(font, Component.literal(label), x, y, TEXT_MUTED)
+        return 10 + renderWrappedBlock(gui, Component.literal(value), x, y + 10, width, 2, color)
+    }
+
+    private fun renderWrappedBlock(
+        gui: GuiGraphics,
+        text: Component,
+        x: Int,
+        y: Int,
+        width: Int,
+        maxLines: Int,
+        color: Int
+    ): Int {
+        val lines = font.split(text, width).take(maxLines)
+        lines.forEachIndexed { index, line ->
+            gui.drawString(font, line, x, y + index * 10, color)
+        }
+        return lines.size * 10
+    }
+
+    private fun renderKitItems(
+        gui: GuiGraphics,
+        kit: ClassKit,
+        startX: Int,
+        startY: Int,
+        availableWidth: Int,
+        availableHeight: Int,
+        mouseX: Int,
+        mouseY: Int
+    ) {
+        val displayItems = kit.items.mapNotNull(::toDisplayEntry)
+        val cellWidth = 28
+        val cellHeight = 28
+        val columns = (availableWidth / cellWidth).coerceIn(4, 6)
+        val rows = (availableHeight / cellHeight).coerceAtLeast(1)
+        val visibleCount = (columns * rows).coerceAtMost(displayItems.size)
+
+        displayItems.take(visibleCount).forEachIndexed { index, entry ->
             val x = startX + (index % columns) * cellWidth
             val y = startY + (index / columns) * cellHeight
 
             gui.renderFakeItem(entry.stack, x, y)
             gui.renderItemDecorations(font, entry.stack, x, y)
 
-            val slotLabel = entry.slotLabel
-            if (slotLabel != null) {
-                gui.drawCenteredString(font, Component.literal(slotLabel), x + 8, y + 18, 0x9A9A9A)
+            entry.slotLabel?.let { slotLabel ->
+                gui.drawCenteredString(font, Component.literal(slotLabel), x + 8, y + 18, TEXT_MUTED)
             }
 
             if (mouseX in x until (x + 16) && mouseY in y until (y + 16)) {
@@ -253,10 +352,57 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
             }
         }
 
-        val hiddenCount = kit.items.size - displayItems.size
+        val hiddenCount = displayItems.size - visibleCount
         if (hiddenCount > 0) {
-            gui.drawString(font, Component.literal("$hiddenCount invalid item${if (hiddenCount == 1) "" else "s"}"), startX, startY + ((displayItems.size + columns - 1) / columns) * cellHeight, 0xC07070)
+            gui.drawString(font, Component.literal("+$hiddenCount more item${if (hiddenCount == 1) "" else "s"}"), startX, startY + rows * cellHeight + 2, TEXT_MUTED)
         }
+
+        val invalidCount = kit.items.size - displayItems.size
+        if (invalidCount > 0) {
+            gui.drawString(font, Component.literal("$invalidCount invalid item${if (invalidCount == 1) "" else "s"}"), startX + 82, startY + rows * cellHeight + 2, TEXT_BAD)
+        }
+    }
+
+    private fun drawPanel(gui: GuiGraphics, x: Int, y: Int, width: Int, height: Int, label: String) {
+        gui.fill(x, y, x + width, y + height, PANEL_BACKGROUND)
+        gui.fill(x, y, x + width, y + 1, PANEL_BORDER)
+        gui.fill(x, y + height - 1, x + width, y + height, PANEL_BORDER)
+        gui.fill(x, y, x + 1, y + height, PANEL_BORDER)
+        gui.fill(x + width - 1, y, x + width, y + height, PANEL_BORDER)
+        gui.fill(x, y, x + width, y + 18, 0x66243340)
+        gui.fill(x, y + 18, x + width, y + 19, PANEL_ACCENT)
+        gui.drawString(font, Component.literal(label), x + 8, y + 5, TEXT_PRIMARY)
+    }
+
+    private fun computeLayout(): Layout {
+        val fullWidth = width - OUTER_PADDING * 2
+        val leftWidth = (fullWidth / 5).coerceIn(132, 154)
+        var rightWidth = (fullWidth / 4).coerceIn(180, 208)
+        var centerWidth = fullWidth - leftWidth - rightWidth - PANEL_GAP * 2
+
+        if (centerWidth < 230) {
+            val recovered = (230 - centerWidth).coerceAtMost(rightWidth - 160)
+            rightWidth -= recovered
+            centerWidth += recovered
+        }
+
+        val top = TOP_MARGIN
+        val height = height - TOP_MARGIN - BOTTOM_MARGIN
+        val leftX = OUTER_PADDING
+        val centerX = leftX + leftWidth + PANEL_GAP
+        val rightX = centerX + centerWidth + PANEL_GAP
+
+        return Layout(
+            leftX = leftX,
+            centerX = centerX,
+            rightX = rightX,
+            top = top,
+            bottom = top + height,
+            leftWidth = leftWidth,
+            centerWidth = centerWidth,
+            rightWidth = rightWidth,
+            height = height
+        )
     }
 
     private fun buildPreviewPlayer(kit: ClassKit): net.minecraft.client.player.RemotePlayer? {
@@ -286,7 +432,12 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
         val stack = resolveStack(kitItem) ?: return
         when (val slotTarget = KitSlot.parse(kitItem.slot)) {
             KitSlotTarget.Inventory -> {
-                if (index == firstHandItemIndex()) {
+                if (index == previewMainhandItemIndex()) {
+                    player.setItemSlot(EquipmentSlot.MAINHAND, stack)
+                }
+            }
+            is KitSlotTarget.Hotbar -> {
+                if (index == previewMainhandItemIndex()) {
                     player.setItemSlot(EquipmentSlot.MAINHAND, stack)
                 }
             }
@@ -297,12 +448,14 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
         }
     }
 
-    private fun firstHandItemIndex(): Int = kits.getOrNull(selectedKitIndex)
-        ?.items
-        ?.indexOfFirst { item ->
-            KitSlot.parse(item.slot) == KitSlotTarget.Inventory
-        }
-        ?: -1
+    private fun previewMainhandItemIndex(): Int {
+        val items = kits.getOrNull(selectedKitIndex)?.items ?: return -1
+        val exactHotbar = items.indexOfFirst { KitSlot.parse(it.slot) == KitSlotTarget.Hotbar(0) }
+        if (exactHotbar >= 0) return exactHotbar
+        val anyHotbar = items.indexOfFirst { KitSlot.parse(it.slot) is KitSlotTarget.Hotbar }
+        if (anyHotbar >= 0) return anyHotbar
+        return items.indexOfFirst { KitSlot.parse(it.slot) == KitSlotTarget.Inventory }
+    }
 
     private fun toDisplayEntry(kitItem: KitItem): DisplayItemEntry? {
         val stack = resolveStack(kitItem) ?: return null
@@ -310,10 +463,7 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
     }
 
     private fun resolveStack(kitItem: KitItem): ItemStack? {
-        val itemId = ResourceLocation.tryParse(kitItem.item) ?: return null
-        val item = ForgeRegistries.ITEMS.getValue(itemId) ?: return null
-        if (item == Items.AIR) return null
-        return ItemStack(item, kitItem.count.coerceAtLeast(1))
+        return KitItemStackFactory.create(kitItem.item, kitItem.count)
     }
 
     private data class DisplayItemEntry(val stack: ItemStack, val slotLabel: String?)

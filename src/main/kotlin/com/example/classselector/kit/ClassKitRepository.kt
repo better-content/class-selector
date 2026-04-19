@@ -41,8 +41,8 @@ object ClassKitRepository {
             require(kit.items.isNotEmpty()) { "Class kit '${kit.id}' must define at least one item" }
 
             kit.items.forEachIndexed { index, item ->
-                require(ResourceLocation.tryParse(item.item) != null) {
-                    "Class kit '${kit.id}' item #${index + 1} has an invalid item id '${item.item}'"
+                require(runCatching { KitItemStackFactory.parse(item.item) }.isSuccess) {
+                    "Class kit '${kit.id}' item #${index + 1} has an invalid item spec '${item.item}'"
                 }
                 require(item.count > 0) {
                     "Class kit '${kit.id}' item #${index + 1} must have a positive count"
