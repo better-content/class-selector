@@ -117,11 +117,18 @@ object ClassSelectorGameTests {
     @JvmStatic
     @GameTest(template = "empty")
     fun respawnSnapPrefersThreeHorizontalOverOneVertical(helper: GameTestHelper) {
-        val requestedFeetPos = BlockPos(1, 2, 1)
-        val verticalCandidate = BlockPos(1, 3, 1)
-        val horizontalCandidate = BlockPos(3, 2, 1)
+        val requestedFeetPos = BlockPos(3, 4, 3)
+        val verticalCandidate = BlockPos(3, 5, 3)
+        val horizontalCandidate = BlockPos(5, 4, 3)
 
-        helper.setBlock(requestedFeetPos.below(), Blocks.AIR)
+        for (x in 0..7) {
+            for (y in 0..7) {
+                for (z in 0..7) {
+                    helper.setBlock(BlockPos(x, y, z), Blocks.AIR)
+                }
+            }
+        }
+
         helper.setBlock(requestedFeetPos, Blocks.STONE)
         helper.setBlock(requestedFeetPos.above(), Blocks.STONE)
 
