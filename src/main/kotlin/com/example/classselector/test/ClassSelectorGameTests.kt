@@ -18,7 +18,7 @@ object ClassSelectorGameTests {
     @JvmStatic
     @GameTest(template = "empty")
     fun kitsShouldLoad(helper: GameTestHelper) {
-        val kits = ClassKitRepository.load(helper.level.server.resourceManager)
+        val kits = ClassKitRepository.load()
         if (kits.size != 9) {
             throw GameTestAssertException("Expected 9 default class kits, found ${kits.size}")
         }

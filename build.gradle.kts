@@ -74,6 +74,10 @@ tasks.withType<KotlinCompile>().configureEach {
     }
 }
 
+tasks.named<Jar>("jar") {
+    finalizedBy("reobfJar")
+}
+
 tasks.test {
     useJUnitPlatform()
 }

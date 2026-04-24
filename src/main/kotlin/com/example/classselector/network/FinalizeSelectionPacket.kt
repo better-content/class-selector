@@ -1,6 +1,7 @@
 package com.example.classselector.network
 
 import com.example.classselector.ClassSelectorScope
+import com.example.classselector.integration.OnboardingIntegration
 import com.example.classselector.kit.ClassKitRepository
 import com.example.classselector.kit.KitApplicator
 import com.example.classselector.network.FinalizeSelectionPacket.Companion.MAX_DIMENSION_ID_LENGTH
@@ -43,6 +44,7 @@ class FinalizeSelectionPacket(
             ctx.enqueueWork {
                 val player = ctx.sender ?: return@enqueueWork
                 if (!ClassSelectorScope.isActiveIn(player.server)) return@enqueueWork
+                if (OnboardingIntegration.hasCompletedOnboarding(player)) return@enqueueWork
                 if (KitApplicator.hasSelectedClass(player)) return@enqueueWork
 
                 val kit = ClassKitRepository.get().firstOrNull { it.id == packet.classId }
@@ -60,7 +62,9 @@ class FinalizeSelectionPacket(
                 val requestedPoint = PersonalRespawnPoint(packet.dimensionId, packet.x, packet.y, packet.z)
                 val preparedPoint = PersonalRespawnService.setRespawnPoint(player, requestedPoint)
                 val resolvedPoint = preparedPoint.point
+                val spawnId = OnboardingIntegration.buildSpawnId(resolvedPoint)
                 KitApplicator.apply(player, kit)
+                OnboardingIntegration.finalizeOnboarding(player, kit.id, spawnId)
                 PersonalRespawnService.releasePlayerFromSpectator(player)
                 val message = when {
                     preparedPoint.sitePrepared && preparedPoint.locationAdjusted ->

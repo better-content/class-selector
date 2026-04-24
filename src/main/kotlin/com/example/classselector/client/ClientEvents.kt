@@ -1,6 +1,7 @@
 package com.example.classselector.client
 
 import com.example.classselector.ClassSelectorMod
+import com.mojang.blaze3d.platform.InputConstants
 import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
@@ -13,14 +14,17 @@ import org.lwjgl.glfw.GLFW
 
 @Mod.EventBusSubscriber(modid = ClassSelectorMod.MOD_ID, value = [Dist.CLIENT], bus = Mod.EventBusSubscriber.Bus.MOD)
 object ClientModEvents {
-    var openClassMenuKey: KeyMapping? = null
+    val openClassMenuKey: KeyMapping = KeyMapping(
+        "key.classselector.open_menu",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_K,
+        "key.categories.classselector"
+    )
 
     @JvmStatic
     @SubscribeEvent
     fun registerKeys(event: RegisterKeyMappingsEvent) {
-        val classKey = KeyMapping("key.classselector.open_menu", GLFW.GLFW_KEY_K, "key.categories.gameplay")
-        openClassMenuKey = classKey
-        event.register(classKey)
+        event.register(openClassMenuKey)
     }
 }
 
@@ -40,7 +44,7 @@ object ClientForgeEvents {
             return
         }
 
-        if (ClassSelectionState.activeInCurrentWorld && ClassSelectionState.selectionRequired && ClientModEvents.openClassMenuKey?.consumeClick() == true) {
+        if (ClassSelectionState.activeInCurrentWorld && ClassSelectionState.selectionRequired && ClientModEvents.openClassMenuKey.consumeClick()) {
             if (ClassSelectionState.kits.isNotEmpty()) {
                 mc.setScreen(ClassSelectionScreen(ClassSelectionState.kits))
             } else {
@@ -51,7 +55,13 @@ object ClientForgeEvents {
         if (ClassSelectionState.promptOpen && mc.screen == null) {
             ClassSelectionState.promptOpen = false
             ClassSelectionState.reminderCooldownTicks = REMINDER_INTERVAL_TICKS
-            player.displayClientMessage(Component.literal("Press K to lock a class, lock a respawn point, then begin."), true)
+            player.displayClientMessage(
+                Component.translatable(
+                    "message.classselector.lock_in_prompt",
+                    ClientModEvents.openClassMenuKey.translatedKeyMessage
+                ),
+                true
+            )
             if (ClassSelectionState.kits.isNotEmpty()) {
                 mc.setScreen(ClassSelectionScreen(ClassSelectionState.kits))
             }
@@ -68,6 +78,12 @@ object ClientForgeEvents {
         }
 
         ClassSelectionState.reminderCooldownTicks = REMINDER_INTERVAL_TICKS
-        player.displayClientMessage(Component.literal("Press K to finish locking your class and respawn point."), true)
+        player.displayClientMessage(
+            Component.translatable(
+                "message.classselector.lock_in_reminder",
+                ClientModEvents.openClassMenuKey.translatedKeyMessage
+            ),
+            true
+        )
     }
 }

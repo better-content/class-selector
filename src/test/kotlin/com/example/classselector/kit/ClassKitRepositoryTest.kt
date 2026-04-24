@@ -72,6 +72,28 @@ class ClassKitRepositoryTest {
     }
 
     @Test
+    fun parseRejectsInvalidJsonWithLineReference() {
+        val malformedJson = """
+            [
+              {
+                "id": "broken",
+                "title": "Broken",
+                "blurb": "Invalid",
+                "description": "Missing comma between fields"
+                "items": [{"item": "minecraft:stick"}]
+              }
+            ]
+        """.trimIndent()
+
+        val error = assertFailsWith<IllegalArgumentException> {
+            ClassKitRepository.parse(malformedJson)
+        }
+        assertTrue(error.message!!.contains("Invalid JSON syntax"))
+        assertTrue(error.message!!.contains("line", ignoreCase = true))
+        assertTrue(error.message!!.contains("column", ignoreCase = true))
+    }
+
+    @Test
     fun rejectsUnsupportedSlots() {
         val kits = listOf(
             ClassKit(

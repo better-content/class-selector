@@ -2,6 +2,7 @@ package com.example.classselector
 
 import com.example.classselector.kit.ClassKitRepository
 import com.example.classselector.kit.KitApplicator
+import com.example.classselector.integration.OnboardingIntegration
 import com.example.classselector.network.ClassSelectorNetwork
 import com.example.classselector.network.RequestOpenMenuPacket
 import com.example.classselector.network.SyncClassesPacket
@@ -12,6 +13,7 @@ import net.minecraft.world.level.GameType
 import net.minecraftforge.event.OnDatapackSyncEvent
 import net.minecraftforge.event.entity.player.PlayerEvent
 import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent
+import net.minecraftforge.event.server.ServerAboutToStartEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.network.PacketDistributor
@@ -29,16 +31,17 @@ class ClassSelectorMod {
 
 @Mod.EventBusSubscriber(modid = ClassSelectorMod.MOD_ID)
 object ServerEvents {
+    @JvmStatic
+    @SubscribeEvent
+    fun onServerAboutToStart(event: ServerAboutToStartEvent) {
+        // Fail fast during initial startup if kits.json syntax is invalid.
+        ClassKitRepository.load()
+    }
 
     @JvmStatic
     @SubscribeEvent
     fun onDatapackSync(event: OnDatapackSyncEvent) {
-        val kits = runCatching { ClassKitRepository.load(event.playerList.server.resourceManager) }
-            .getOrElse {
-                val message = Component.literal("Class kits failed to reload; check server logs and datapacks.")
-                event.player?.sendSystemMessage(message) ?: event.playerList.broadcastSystemMessage(message, false)
-                emptyList()
-            }
+        val kits = ClassKitRepository.load()
         val activeInWorld = ClassSelectorScope.isActiveIn(event.playerList.server)
 
         if (event.player != null) {
@@ -62,11 +65,7 @@ object ServerEvents {
     fun onPlayerJoin(event: PlayerLoggedInEvent) {
         val player = event.entity as? ServerPlayer ?: return
         val kits = if (ClassKitRepository.get().isEmpty()) {
-            runCatching { ClassKitRepository.load(player.server.resourceManager) }
-                .getOrElse {
-                    player.sendSystemMessage(Component.literal("Class kits failed to load; contact an admin."))
-                    emptyList()
-                }
+            ClassKitRepository.load()
         } else {
             ClassKitRepository.get()
         }
@@ -101,5 +100,6 @@ object ServerEvents {
             cloned.persistentData.putString(KitApplicator.SELECTED_CLASS_TAG, selected)
         }
         PersonalRespawnService.copyRespawnPoint(original, cloned)
+        OnboardingIntegration.copyPersistentState(original, cloned)
     }
 }
