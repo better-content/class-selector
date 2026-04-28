@@ -15,14 +15,26 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.effect.MobEffectInstance
+import net.minecraft.world.effect.MobEffects
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.Mob
+import net.minecraft.world.entity.monster.Enemy
 import net.minecraft.world.level.GameType
+import net.minecraft.world.level.levelgen.Heightmap
 import net.minecraft.world.level.block.Blocks
 import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.event.TickEvent
 import net.minecraftforge.event.entity.player.PlayerEvent
+import net.minecraftforge.event.entity.player.PlayerSetSpawnEvent
+import net.minecraftforge.eventbus.api.EventPriority
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.fml.common.Mod
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.sin
+import kotlin.math.sqrt
 import java.util.TreeMap
 
 private const val FX_DURATION_TICKS = 60L
@@ -42,6 +54,10 @@ private const val SOUND_PITCH_WARDEN = 0.8
 private const val SOUND_PITCH_EVOKER = 0.9
 private const val RESPAWN_SNAP_RADIUS = 16
 private const val RESPAWN_VERTICAL_WEIGHT = 3
+private const val RESPAWN_TELEPORT_DELAY_TICKS = 2L
+private const val RESPAWN_REPEL_RADIUS = 64.0
+private const val RESPAWN_SLOWNESS_DURATION_TICKS = 30 * 20
+private const val RESPAWN_SLOWNESS_AMPLIFIER = 4
 
 data class PersonalRespawnPoint(val dim: String, val x: Int, val y: Int, val z: Int)
 data class PreparedRespawnPoint(val point: PersonalRespawnPoint, val sitePrepared: Boolean, val locationAdjusted: Boolean)
@@ -117,12 +133,15 @@ object PersonalRespawnService {
 
     fun handleRespawn(player: ServerPlayer) {
         if (!ClassSelectorScope.isActiveIn(player.server)) return
-        if (!KitApplicator.hasSelectedClass(player)) return
+        // Some mod interactions can occasionally drop selected class tags on clone; if we still have
+        // a stored class respawn point, continue enforcing that respawn location.
+        if (!KitApplicator.hasSelectedClass(player) && !hasRespawnPoint(player)) return
         val point = getRespawnPoint(player) ?: return
 
-        schedule(player.server, 1) { server ->
+        schedule(player.server, RESPAWN_TELEPORT_DELAY_TICKS) { server ->
             val currentPlayer = server.playerList.getPlayer(player.uuid) ?: return@schedule
             teleportPlayerToRespawnPoint(server, currentPlayer, point)
+            applyRespawnProtection(currentPlayer)
         }
     }
 
@@ -289,6 +308,62 @@ object PersonalRespawnService {
         }
     }
 
+    private fun applyRespawnProtection(player: ServerPlayer) {
+        repelHostileMobs(player)
+    }
+
+    private fun repelHostileMobs(player: ServerPlayer) {
+        val level = player.serverLevel()
+        val hostiles = level.getEntities(player, player.boundingBox.inflate(RESPAWN_REPEL_RADIUS)) { entity ->
+            entity is Enemy
+        }
+
+        hostiles.forEach { hostile ->
+            val (unitX, unitZ) = repelDirection(player, hostile)
+            val targetX = player.x + (unitX * RESPAWN_REPEL_RADIUS)
+            val targetZ = player.z + (unitZ * RESPAWN_REPEL_RADIUS)
+            val targetY = safeTargetY(level, targetX, targetZ)
+            hostile.teleportTo(targetX, targetY, targetZ)
+            if (hostile is Mob) {
+                hostile.addEffect(
+                    MobEffectInstance(
+                        MobEffects.MOVEMENT_SLOWDOWN,
+                        RESPAWN_SLOWNESS_DURATION_TICKS,
+                        RESPAWN_SLOWNESS_AMPLIFIER,
+                        false,
+                        true,
+                        true
+                    )
+                )
+            }
+
+            if (hostile is Mob) {
+                hostile.target = null
+                hostile.navigation.stop()
+            }
+        }
+    }
+
+    private fun repelDirection(player: ServerPlayer, hostile: Entity): Pair<Double, Double> {
+        val dx = hostile.x - player.x
+        val dz = hostile.z - player.z
+        val distanceSquared = (dx * dx) + (dz * dz)
+        if (distanceSquared > 0.0001) {
+            val inverseDistance = 1.0 / sqrt(distanceSquared)
+            return (dx * inverseDistance) to (dz * inverseDistance)
+        }
+
+        val angle = ((hostile.id * 37) % 360) * (Math.PI / 180.0)
+        return cos(angle) to sin(angle)
+    }
+
+    private fun safeTargetY(level: ServerLevel, x: Double, z: Double): Double {
+        val blockX = floor(x).toInt()
+        val blockZ = floor(z).toInt()
+        val height = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, blockX, blockZ)
+        return height.coerceIn(level.minBuildHeight + 1, level.maxBuildHeight - 2).toDouble()
+    }
+
     private fun playRespawnSoundForPlayer(server: MinecraftServer, player: ServerPlayer, point: PersonalRespawnPoint) {
         val x = point.x + 0.5
         val y = point.y + 1.0
@@ -362,7 +437,22 @@ object PersonalRespawnService {
 @Mod.EventBusSubscriber(modid = ClassSelectorMod.MOD_ID)
 object PersonalRespawnEvents {
     @JvmStatic
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    fun onPlayerSetSpawn(event: PlayerSetSpawnEvent) {
+        val player = event.entity as? ServerPlayer ?: return
+        if (!ClassSelectorScope.isActiveIn(player.server)) return
+        if (!KitApplicator.hasSelectedClass(player)) return
+        if (!PersonalRespawnService.hasRespawnPoint(player)) return
+
+        // Bed and respawn-anchor style updates are non-forced; keep the class-locked respawn authoritative.
+        if (!event.isForced && event.newSpawn != null) {
+            event.isCanceled = true
+            player.sendSystemMessage(Component.literal("Bed respawn changes are disabled while class spawn is locked."))
+        }
+    }
+
+    @JvmStatic
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     fun onPlayerRespawn(event: PlayerEvent.PlayerRespawnEvent) {
         val player = event.entity as? ServerPlayer ?: return
         PersonalRespawnService.handleRespawn(player)
