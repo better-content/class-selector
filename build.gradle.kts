@@ -7,6 +7,7 @@ val curiosMappedJar = "vendor/mods/curios-forge-${property("curios_version")}_ma
 plugins {
     idea
     `maven-publish`
+    jacoco
     id("org.jetbrains.kotlin.jvm") version "2.2.21"
     id("net.minecraftforge.gradle") version "[6.0.24,6.2)"
     id("org.parchmentmc.librarian.forgegradle") version "1.2.0"
@@ -80,6 +81,31 @@ tasks.named<Jar>("jar") {
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy("jacocoTestReport")
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+val jacocoIncludedClasses = listOf(
+    "**/kit/ClassKit.class",
+    "**/kit/KitItem.class",
+    "**/kit/KitSlot.class",
+    "**/kit/KitSlotTarget*",
+    "**/client/ClassSelectionState*.class"
+)
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    val mainClasses = fileTree(layout.buildDirectory.dir("classes/kotlin/main").get().asFile) {
+        include(jacocoIncludedClasses)
+    }
+    classDirectories.setFrom(mainClasses)
 }
 
 tasks.register("headlessGameTest") {

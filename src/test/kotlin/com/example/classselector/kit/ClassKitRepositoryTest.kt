@@ -112,4 +112,70 @@ class ClassKitRepositoryTest {
         }
         assertTrue(error.message!!.contains("unsupported slot"))
     }
+
+    @Test
+    fun validateRejectsEmptyClassKitList() {
+        val error = assertFailsWith<IllegalArgumentException> {
+            ClassKitRepository.validate(emptyList())
+        }
+        assertTrue(error.message!!.contains("No class kits defined"))
+    }
+
+    @Test
+    fun validateRejectsDuplicateIds() {
+        val kits = listOf(
+            ClassKit(
+                id = "dup",
+                title = "First",
+                blurb = "A",
+                description = "X",
+                items = listOf(KitItem(item = "minecraft:stick", slot = "inventory"))
+            ),
+            ClassKit(
+                id = "dup",
+                title = "Second",
+                blurb = "B",
+                description = "Y",
+                items = listOf(KitItem(item = "minecraft:stone", slot = "inventory"))
+            )
+        )
+
+        val error = assertFailsWith<IllegalArgumentException> {
+            ClassKitRepository.validate(kits)
+        }
+        assertTrue(error.message!!.contains("Duplicate class kit ids"))
+    }
+
+    @Test
+    fun validateRejectsMissingRequiredFields() {
+        val missingTitle = listOf(
+            ClassKit(id = "missing", title = "", blurb = "B", description = "C", items = listOf(KitItem(item = "minecraft:stone")))
+        )
+        val missingBlurb = listOf(
+            ClassKit(id = "missing", title = "A", blurb = " ", description = "C", items = listOf(KitItem(item = "minecraft:stone")))
+        )
+        val missingDescription = listOf(
+            ClassKit(id = "missing", title = "A", blurb = "B", description = "", items = listOf(KitItem(item = "minecraft:stone")))
+        )
+
+        val titleError = assertFailsWith<IllegalArgumentException> { ClassKitRepository.validate(missingTitle) }
+        val blurbError = assertFailsWith<IllegalArgumentException> { ClassKitRepository.validate(missingBlurb) }
+        val descriptionError = assertFailsWith<IllegalArgumentException> { ClassKitRepository.validate(missingDescription) }
+
+        assertTrue(titleError.message!!.contains("non-blank title"))
+        assertTrue(blurbError.message!!.contains("non-blank blurb"))
+        assertTrue(descriptionError.message!!.contains("non-blank description"))
+    }
+
+    @Test
+    fun validateRejectsZeroItemCount() {
+        val kits = listOf(
+            ClassKit(id = "zero", title = "Zero", blurb = "Count", description = "No items", items = listOf(
+                KitItem(item = "minecraft:stone", count = 0)
+            ))
+        )
+
+        val error = assertFailsWith<IllegalArgumentException> { ClassKitRepository.validate(kits) }
+        assertTrue(error.message!!.contains("must have a positive count"))
+    }
 }
