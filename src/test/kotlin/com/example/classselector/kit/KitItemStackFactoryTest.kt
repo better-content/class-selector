@@ -29,6 +29,15 @@ class KitItemStackFactoryTest {
     }
 
     @Test
+    fun parsesItemSpecWithBracesOnlyInsideNbtPayload() {
+        val parsed = KitItemStackFactory.parse("""minecraft:stone{display:{Name:'{"text":"Starter"}'}}""")
+
+        assertEquals(ResourceLocation.fromNamespaceAndPath("minecraft", "stone"), parsed.itemId)
+        assertNotNull(parsed.tag)
+        assertEquals("""{"text":"Starter"}""", parsed.tag.getCompound("display").getString("Name"))
+    }
+
+    @Test
     fun rejectsBlankSpec() {
         val error = assertFailsWith<IllegalArgumentException> {
             KitItemStackFactory.parse("   ")

@@ -167,4 +167,42 @@ object ClassSelectorGameTests {
 
         helper.succeed()
     }
+
+    @JvmStatic
+    @GameTest(template = "empty")
+    fun alreadyPreparedValidRespawnSiteIsLeftInPlace(helper: GameTestHelper) {
+        val requestedFeetPos = BlockPos(1, 1, 1)
+
+        helper.setBlock(requestedFeetPos.below(), Blocks.CRYING_OBSIDIAN)
+        helper.setBlock(requestedFeetPos, Blocks.AIR)
+        helper.setBlock(requestedFeetPos.above(), Blocks.AIR)
+
+        val requestedFeetAbs = helper.absolutePos(requestedFeetPos)
+        val prepared = PersonalRespawnService.prepareRespawnPoint(
+            helper.level.server,
+            PersonalRespawnPoint(
+                dim = helper.level.dimension().location().toString(),
+                x = requestedFeetAbs.x,
+                y = requestedFeetAbs.y,
+                z = requestedFeetAbs.z
+            )
+        )
+
+        helper.assertTrue(!prepared.locationAdjusted, "Expected a valid requested site to stay selected")
+        helper.assertTrue(!prepared.sitePrepared, "Expected already prepared site to avoid extra block writes")
+        helper.assertTrue(
+            prepared.point == PersonalRespawnPoint(
+                dim = helper.level.dimension().location().toString(),
+                x = requestedFeetAbs.x,
+                y = requestedFeetAbs.y,
+                z = requestedFeetAbs.z
+            ),
+            "Expected prepared point to equal requested point, found ${prepared.point}"
+        )
+        helper.assertBlockPresent(Blocks.CRYING_OBSIDIAN, requestedFeetPos.below())
+        helper.assertBlockPresent(Blocks.AIR, requestedFeetPos)
+        helper.assertBlockPresent(Blocks.AIR, requestedFeetPos.above())
+
+        helper.succeed()
+    }
 }

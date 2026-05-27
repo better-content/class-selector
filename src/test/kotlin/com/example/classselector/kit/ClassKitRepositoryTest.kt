@@ -147,6 +147,24 @@ class ClassKitRepositoryTest {
     }
 
     @Test
+    fun validateRejectsInvalidItemSpecs() {
+        val kits = listOf(
+            ClassKit(
+                id = "broken_item",
+                title = "Broken Item",
+                blurb = "Invalid",
+                description = "Contains an invalid item id.",
+                items = listOf(KitItem(item = "not a resource", slot = "inventory"))
+            )
+        )
+
+        val error = assertFailsWith<IllegalArgumentException> {
+            ClassKitRepository.validate(kits)
+        }
+        assertTrue(error.message!!.contains("invalid item spec"))
+    }
+
+    @Test
     fun validateRejectsMissingRequiredFields() {
         val missingTitle = listOf(
             ClassKit(id = "missing", title = "", blurb = "B", description = "C", items = listOf(KitItem(item = "minecraft:stone")))
@@ -177,5 +195,15 @@ class ClassKitRepositoryTest {
 
         val error = assertFailsWith<IllegalArgumentException> { ClassKitRepository.validate(kits) }
         assertTrue(error.message!!.contains("must have a positive count"))
+    }
+
+    @Test
+    fun validateRejectsKitsWithoutItems() {
+        val kits = listOf(
+            ClassKit(id = "empty", title = "Empty", blurb = "None", description = "No starting gear.", items = emptyList())
+        )
+
+        val error = assertFailsWith<IllegalArgumentException> { ClassKitRepository.validate(kits) }
+        assertTrue(error.message!!.contains("must define at least one item"))
     }
 }
