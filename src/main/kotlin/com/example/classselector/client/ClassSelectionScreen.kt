@@ -109,7 +109,7 @@ class ClassSelectionScreen(private val kits: List<ClassKit>) : Screen(Component.
                 ClassSelectionState.promptOpen = false
                 ClassSelectionState.reminderCooldownTicks = 0
                 ClassSelectorNetwork.CHANNEL.sendToServer(
-                    FinalizeSelectionPacket(classId, respawn.dim, respawn.x, respawn.y, respawn.z)
+                    FinalizeSelectionPacket.classSelection(classId, respawn.dim, respawn.x, respawn.y, respawn.z)
                 )
                 onClose()
             }.pos(actionX, actionBottom - BUTTON_HEIGHT).size(actionWidth, BUTTON_HEIGHT).build()

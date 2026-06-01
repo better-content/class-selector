@@ -6,7 +6,8 @@ A Forge mod that forces new players to pick a class before starting:
 - Class menu shows title, blurb, and description.
 - Players lock a class and lock a respawn point separately, then press `Begin`.
 - Kits are JSON-defined in `config/classselector/kits.json`.
-- Respawning returns the player to that saved class location with the scripted sound and particle FX.
+- Alternatively, `config/classselector/embark.json` can switch onboarding to an embark-style point-buy item pool.
+- Respawning returns the player to that saved starting location with the scripted sound and particle FX.
 
 ## Admin commands
 
@@ -21,6 +22,25 @@ Each item entry can include an optional `slot` field:
 - `curio:<identifier>`: attempts to equip into the first free Curios slot with that identifier (example: `curio:charm`, `curio:ring`).
 
 If a requested slot is missing or full, the item falls back to player inventory.
+
+## Embark point-buy mode
+
+`config/classselector/embark.json` controls the selection mode:
+- `"mode": "class"` keeps the existing fixed class selector.
+- `"mode": "embark_points"` replaces classes with a point-buy supply screen.
+- `"pointQuota"` sets how many points each player can spend.
+- `"items"` defines the purchasable pool.
+
+Each embark item supports:
+- `id`: unique purchase id.
+- `title`: display name.
+- `category`: optional grouping label shown in the supply row.
+- `blurb`: short display text.
+- `item`: item id with optional NBT, using the same syntax as kit items.
+- `count`: stack count granted per purchase.
+- `cost`: points spent per purchase.
+- `maxPurchases`: per-player purchase cap for that entry.
+- `slot`: optional target slot using the same values as kit slot targeting.
 
 ## Dependencies
 

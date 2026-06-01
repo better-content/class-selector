@@ -11,9 +11,13 @@ object KitApplicator {
     fun hasSelectedClass(player: ServerPlayer): Boolean = player.persistentData.contains(SELECTED_CLASS_TAG)
 
     fun apply(player: ServerPlayer, kit: ClassKit) {
+        applyItems(player, kit.items, kit.id)
+    }
+
+    fun applyItems(player: ServerPlayer, items: List<KitItem>, selectionId: String) {
         player.inventory.clearContent()
-        kit.items.forEach { giveItemToConfiguredSlot(player, it) }
-        player.persistentData.putString(SELECTED_CLASS_TAG, kit.id)
+        items.forEach { giveItemToConfiguredSlot(player, it) }
+        player.persistentData.putString(SELECTED_CLASS_TAG, selectionId)
     }
 
     private fun giveItemToConfiguredSlot(player: ServerPlayer, kitItem: KitItem) {

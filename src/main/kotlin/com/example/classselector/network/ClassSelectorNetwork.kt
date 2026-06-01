@@ -11,7 +11,7 @@ import java.util.function.Function
 import java.util.function.Supplier
 
 object ClassSelectorNetwork {
-    private const val PROTOCOL = "1"
+    private const val PROTOCOL = "2"
     val CHANNEL: SimpleChannel = NetworkRegistry.newSimpleChannel(
         ResourceLocation.fromNamespaceAndPath(ClassSelectorMod.MOD_ID, "main"),
         { PROTOCOL },

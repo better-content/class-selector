@@ -1,6 +1,7 @@
 package com.example.classselector.client
 
 import com.example.classselector.ClassSelectorMod
+import com.example.classselector.embark.SelectionMode
 import com.mojang.blaze3d.platform.InputConstants
 import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
@@ -45,10 +46,10 @@ object ClientForgeEvents {
         }
 
         if (ClassSelectionState.activeInCurrentWorld && ClassSelectionState.selectionRequired && ClientModEvents.openClassMenuKey.consumeClick()) {
-            if (ClassSelectionState.kits.isNotEmpty()) {
-                mc.setScreen(ClassSelectionScreen(ClassSelectionState.kits))
+            if (ClassSelectionState.hasSelectionOptions()) {
+                openSelectionScreen(mc)
             } else {
-                player.sendSystemMessage(Component.literal("Class kits are still syncing."))
+                player.sendSystemMessage(Component.literal("Starting options are still syncing."))
             }
         }
 
@@ -62,8 +63,8 @@ object ClientForgeEvents {
                 ),
                 true
             )
-            if (ClassSelectionState.kits.isNotEmpty()) {
-                mc.setScreen(ClassSelectionScreen(ClassSelectionState.kits))
+            if (ClassSelectionState.hasSelectionOptions()) {
+                openSelectionScreen(mc)
             }
             return
         }
@@ -85,5 +86,14 @@ object ClientForgeEvents {
             ),
             true
         )
+    }
+
+    private fun openSelectionScreen(mc: Minecraft) {
+        when (ClassSelectionState.selectionMode) {
+            SelectionMode.CLASS -> mc.setScreen(ClassSelectionScreen(ClassSelectionState.kits))
+            SelectionMode.EMBARK_POINTS -> mc.setScreen(
+                EmbarkSelectionScreen(ClassSelectionState.embarkItems, ClassSelectionState.pointQuota)
+            )
+        }
     }
 }

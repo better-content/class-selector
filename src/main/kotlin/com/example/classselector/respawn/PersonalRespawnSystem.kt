@@ -25,6 +25,7 @@ import net.minecraft.world.level.levelgen.Heightmap
 import net.minecraft.world.level.block.Blocks
 import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.event.TickEvent
+import net.minecraftforge.event.entity.living.LivingDeathEvent
 import net.minecraftforge.event.entity.player.PlayerEvent
 import net.minecraftforge.event.entity.player.PlayerSetSpawnEvent
 import net.minecraftforge.eventbus.api.EventPriority
@@ -54,7 +55,6 @@ private const val SOUND_PITCH_WARDEN = 0.8
 private const val SOUND_PITCH_EVOKER = 0.9
 private const val RESPAWN_SNAP_RADIUS = 16
 private const val RESPAWN_VERTICAL_WEIGHT = 3
-private const val RESPAWN_TELEPORT_DELAY_TICKS = 2L
 private const val RESPAWN_REPEL_RADIUS = 64.0
 private const val RESPAWN_SLOWNESS_DURATION_TICKS = 30 * 20
 private const val RESPAWN_SLOWNESS_AMPLIFIER = 4
@@ -138,16 +138,19 @@ object PersonalRespawnService {
         if (!KitApplicator.hasSelectedClass(player) && !hasRespawnPoint(player)) return
         val point = getRespawnPoint(player) ?: return
 
-        schedule(player.server, RESPAWN_TELEPORT_DELAY_TICKS) { server ->
-            val currentPlayer = server.playerList.getPlayer(player.uuid) ?: return@schedule
-            teleportPlayerToRespawnPoint(server, currentPlayer, point)
-            applyRespawnProtection(currentPlayer)
-        }
+        teleportPlayerToRespawnPoint(player.server, player, point)
+        applyRespawnProtection(player)
     }
 
     fun copyRespawnPoint(from: ServerPlayer, to: ServerPlayer) {
         val point = getRespawnPoint(from) ?: return
         saveRespawnPoint(to, point)
+    }
+
+    fun refreshVanillaRespawnPosition(player: ServerPlayer): Boolean {
+        val point = getRespawnPoint(player) ?: return false
+        saveRespawnPoint(player, point)
+        return true
     }
 
     fun sendRespawnResetMessage(player: ServerPlayer) {
@@ -436,6 +439,16 @@ object PersonalRespawnService {
 
 @Mod.EventBusSubscriber(modid = ClassSelectorMod.MOD_ID)
 object PersonalRespawnEvents {
+    @JvmStatic
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    fun onLivingDeath(event: LivingDeathEvent) {
+        val player = event.entity as? ServerPlayer ?: return
+        if (!ClassSelectorScope.isActiveIn(player.server)) return
+        if (!KitApplicator.hasSelectedClass(player) && !PersonalRespawnService.hasRespawnPoint(player)) return
+
+        PersonalRespawnService.refreshVanillaRespawnPosition(player)
+    }
+
     @JvmStatic
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     fun onPlayerSetSpawn(event: PlayerSetSpawnEvent) {

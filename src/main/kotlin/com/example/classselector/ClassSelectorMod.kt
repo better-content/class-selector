@@ -1,8 +1,8 @@
 package com.example.classselector
 
-import com.example.classselector.kit.ClassKitRepository
 import com.example.classselector.kit.KitApplicator
 import com.example.classselector.integration.OnboardingIntegration
+import com.example.classselector.embark.SelectionDataRepository
 import com.example.classselector.network.ClassSelectorNetwork
 import com.example.classselector.network.RequestOpenMenuPacket
 import com.example.classselector.network.SyncClassesPacket
@@ -34,20 +34,20 @@ object ServerEvents {
     @JvmStatic
     @SubscribeEvent
     fun onServerAboutToStart(event: ServerAboutToStartEvent) {
-        // Fail fast during initial startup if kits.json syntax is invalid.
-        ClassKitRepository.load()
+        // Fail fast during initial startup if active selection config syntax is invalid.
+        SelectionDataRepository.load()
     }
 
     @JvmStatic
     @SubscribeEvent
     fun onDatapackSync(event: OnDatapackSyncEvent) {
-        val kits = ClassKitRepository.load()
+        val selectionData = SelectionDataRepository.load()
         val activeInWorld = ClassSelectorScope.isActiveIn(event.playerList.server)
 
         if (event.player != null) {
             ClassSelectorNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with { event.player },
-                SyncClassesPacket.fromKits(activeInWorld, kits)
+                SyncClassesPacket.fromSelectionData(activeInWorld, selectionData)
             )
             return
         }
@@ -55,7 +55,7 @@ object ServerEvents {
         event.playerList.players.forEach { online ->
             ClassSelectorNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with { online },
-                SyncClassesPacket.fromKits(activeInWorld, kits)
+                SyncClassesPacket.fromSelectionData(activeInWorld, selectionData)
             )
         }
     }
@@ -64,15 +64,11 @@ object ServerEvents {
     @SubscribeEvent
     fun onPlayerJoin(event: PlayerLoggedInEvent) {
         val player = event.entity as? ServerPlayer ?: return
-        val kits = if (ClassKitRepository.get().isEmpty()) {
-            ClassKitRepository.load()
-        } else {
-            ClassKitRepository.get()
-        }
+        val selectionData = SelectionDataRepository.getOrLoad()
         val activeInWorld = ClassSelectorScope.isActiveIn(player.server)
         ClassSelectorNetwork.CHANNEL.send(
             PacketDistributor.PLAYER.with { player },
-            SyncClassesPacket.fromKits(activeInWorld, kits)
+            SyncClassesPacket.fromSelectionData(activeInWorld, selectionData)
         )
 
         if (!activeInWorld) {

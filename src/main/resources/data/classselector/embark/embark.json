@@ -1,0 +1,160 @@
+{
+  "mode": "class",
+  "pointQuota": 12,
+  "items": [
+    {
+      "id": "oak_logs",
+      "title": "Oak Logs",
+      "category": "Materials",
+      "blurb": "Base building stock.",
+      "item": "minecraft:oak_log",
+      "count": 16,
+      "cost": 1,
+      "maxPurchases": 4,
+      "slot": "inventory"
+    },
+    {
+      "id": "cobblestone",
+      "title": "Cobblestone",
+      "category": "Materials",
+      "blurb": "Early crafting and shelter material.",
+      "item": "minecraft:cobblestone",
+      "count": 32,
+      "cost": 1,
+      "maxPurchases": 3,
+      "slot": "inventory"
+    },
+    {
+      "id": "bread",
+      "title": "Bread",
+      "category": "Survival",
+      "blurb": "Simple starting food.",
+      "item": "minecraft:bread",
+      "count": 8,
+      "cost": 1,
+      "maxPurchases": 3,
+      "slot": "inventory"
+    },
+    {
+      "id": "torches",
+      "title": "Torches",
+      "category": "Survival",
+      "blurb": "Cave and base lighting.",
+      "item": "minecraft:torch",
+      "count": 16,
+      "cost": 1,
+      "maxPurchases": 4,
+      "slot": "inventory"
+    },
+    {
+      "id": "stone_pickaxe",
+      "title": "Stone Pickaxe",
+      "category": "Tools",
+      "blurb": "Cheap mining tool.",
+      "item": "minecraft:stone_pickaxe",
+      "count": 1,
+      "cost": 2,
+      "maxPurchases": 1,
+      "slot": "hotbar.0"
+    },
+    {
+      "id": "stone_axe",
+      "title": "Stone Axe",
+      "category": "Tools",
+      "blurb": "Cheap woodcutting tool.",
+      "item": "minecraft:stone_axe",
+      "count": 1,
+      "cost": 2,
+      "maxPurchases": 1,
+      "slot": "hotbar.1"
+    },
+    {
+      "id": "iron_pickaxe",
+      "title": "Iron Pickaxe",
+      "category": "Tools",
+      "blurb": "Reliable mining tool.",
+      "item": "minecraft:iron_pickaxe",
+      "count": 1,
+      "cost": 5,
+      "maxPurchases": 1,
+      "slot": "hotbar.0"
+    },
+    {
+      "id": "iron_sword",
+      "title": "Iron Sword",
+      "category": "Combat",
+      "blurb": "Basic defense.",
+      "item": "minecraft:iron_sword",
+      "count": 1,
+      "cost": 4,
+      "maxPurchases": 1,
+      "slot": "hotbar.1"
+    },
+    {
+      "id": "shield",
+      "title": "Shield",
+      "category": "Combat",
+      "blurb": "Offhand protection.",
+      "item": "minecraft:shield",
+      "count": 1,
+      "cost": 3,
+      "maxPurchases": 1,
+      "slot": "weapon.offhand"
+    },
+    {
+      "id": "bow",
+      "title": "Bow",
+      "category": "Combat",
+      "blurb": "Ranged defense.",
+      "item": "minecraft:bow",
+      "count": 1,
+      "cost": 4,
+      "maxPurchases": 1,
+      "slot": "hotbar.2"
+    },
+    {
+      "id": "arrows",
+      "title": "Arrows",
+      "category": "Combat",
+      "blurb": "Ammunition for a bow.",
+      "item": "minecraft:arrow",
+      "count": 16,
+      "cost": 2,
+      "maxPurchases": 3,
+      "slot": "inventory"
+    },
+    {
+      "id": "white_bed",
+      "title": "White Bed",
+      "category": "Survival",
+      "blurb": "Portable sleep point.",
+      "item": "minecraft:white_bed",
+      "count": 1,
+      "cost": 2,
+      "maxPurchases": 1,
+      "slot": "inventory"
+    },
+    {
+      "id": "wheat_seeds",
+      "title": "Wheat Seeds",
+      "category": "Farming",
+      "blurb": "Start a simple farm.",
+      "item": "minecraft:wheat_seeds",
+      "count": 16,
+      "cost": 1,
+      "maxPurchases": 2,
+      "slot": "inventory"
+    },
+    {
+      "id": "oak_saplings",
+      "title": "Oak Saplings",
+      "category": "Farming",
+      "blurb": "Renewable wood supply.",
+      "item": "minecraft:oak_sapling",
+      "count": 8,
+      "cost": 1,
+      "maxPurchases": 2,
+      "slot": "inventory"
+    }
+  ]
+}
