@@ -4,6 +4,7 @@ import com.example.classselector.embark.EmbarkPoolItem
 import com.example.classselector.embark.EmbarkPurchase
 import com.example.classselector.embark.SelectionMode
 import com.example.classselector.kit.ClassKit
+import kotlin.random.Random
 
 data class PendingRespawnSelection(
     val dim: String,
@@ -64,6 +65,40 @@ object ClassSelectionState {
         } else {
             embarkPurchases[item.id] = current - 1
         }
+    }
+
+    fun canRandomizeEmbarkPurchases(): Boolean =
+        pointQuota > 0 && embarkItems.any { item -> item.cost in 1..pointQuota && item.maxPurchases > 0 }
+
+    fun randomizeEmbarkPurchases(random: Random = Random.Default): Int {
+        embarkPurchases.clear()
+        if (!canRandomizeEmbarkPurchases()) return 0
+
+        val units = embarkItems
+            .flatMap { item -> List(item.maxPurchases) { item } }
+            .filter { item -> item.cost in 1..pointQuota }
+            .shuffled(random)
+
+        val paths = arrayOfNulls<List<EmbarkPoolItem>>(pointQuota + 1)
+        paths[0] = emptyList()
+
+        units.forEach { item ->
+            for (spent in pointQuota - item.cost downTo 0) {
+                val path = paths[spent] ?: continue
+                val nextSpent = spent + item.cost
+                if (paths[nextSpent] == null || random.nextBoolean()) {
+                    paths[nextSpent] = path + item
+                }
+            }
+        }
+
+        val targetSpend = (pointQuota downTo 1).firstOrNull { paths[it] != null } ?: return 0
+        paths[targetSpend].orEmpty()
+            .groupingBy { item -> item.id }
+            .eachCount()
+            .forEach { (itemId, quantity) -> embarkPurchases[itemId] = quantity }
+
+        return targetSpend
     }
 
     fun reconcileEmbarkPurchases() {

@@ -30,7 +30,7 @@ class EmbarkSelectionScreen(
         private const val TEXT_BAD = 0xD58A8A
         private const val BUTTON_HEIGHT = 20
         private const val ROW_HEIGHT = 42
-        private const val ACTION_BUTTON_COUNT = 4
+        private const val ACTION_BUTTON_COUNT = 5
     }
 
     private data class Layout(
@@ -51,6 +51,7 @@ class EmbarkSelectionScreen(
     private var lockRespawnButton: Button? = null
     private var clearRespawnButton: Button? = null
     private var clearSuppliesButton: Button? = null
+    private var randomizeSuppliesButton: Button? = null
     private var beginButton: Button? = null
     private var hoveredItem: ItemStack = ItemStack.EMPTY
 
@@ -64,6 +65,7 @@ class EmbarkSelectionScreen(
             lockRespawnButton = null
             clearRespawnButton = null
             clearSuppliesButton = null
+            randomizeSuppliesButton = null
             beginButton = null
             return
         }
@@ -144,6 +146,13 @@ class EmbarkSelectionScreen(
             }.pos(actionX, actionBottom - (BUTTON_HEIGHT + 4) * 4).size(actionWidth, BUTTON_HEIGHT).build()
         )
 
+        randomizeSuppliesButton = addRenderableWidget(
+            Button.builder(Component.literal("Randomize Supplies")) {
+                ClassSelectionState.randomizeEmbarkPurchases()
+                refreshButtonState()
+            }.pos(actionX, actionBottom - (BUTTON_HEIGHT + 4) * 5).size(actionWidth, BUTTON_HEIGHT).build()
+        )
+
         refreshButtonState()
     }
 
@@ -170,6 +179,7 @@ class EmbarkSelectionScreen(
         lockRespawnButton?.active = ClassSelectionState.activeInCurrentWorld
         clearRespawnButton?.active = ClassSelectionState.activeInCurrentWorld && ClassSelectionState.lockedRespawn != null
         clearSuppliesButton?.active = ClassSelectionState.activeInCurrentWorld && ClassSelectionState.embarkPurchases.isNotEmpty()
+        randomizeSuppliesButton?.active = ClassSelectionState.activeInCurrentWorld && ClassSelectionState.canRandomizeEmbarkPurchases()
         beginButton?.active = ClassSelectionState.activeInCurrentWorld &&
             ClassSelectionState.lockedRespawn != null &&
             ClassSelectionState.selectedEmbarkPurchases().isNotEmpty()

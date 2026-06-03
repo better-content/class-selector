@@ -3,6 +3,8 @@ package com.example.classselector.client
 import com.example.classselector.embark.EmbarkPoolItem
 import com.example.classselector.embark.SelectionMode
 import com.example.classselector.kit.ClassKit
+import kotlin.random.Random
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertEquals
@@ -10,6 +12,11 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ClassSelectionStateTest {
+    @BeforeTest
+    fun resetState() {
+        ClassSelectionState.reset()
+    }
+
     @Test
     fun resetsSelectionState() {
         ClassSelectionState.activeInCurrentWorld = true
@@ -79,6 +86,54 @@ class ClassSelectionStateTest {
         assertEquals(1, ClassSelectionState.embarkPurchases["logs"])
         assertEquals(1, ClassSelectionState.embarkPurchases["shield"])
         assertEquals(4, ClassSelectionState.spentEmbarkPoints())
+    }
+
+    @Test
+    fun randomizeEmbarkPurchasesSpendsFullQuotaWhenReachable() {
+        val onePoint = poolItem(id = "torch", cost = 1, maxPurchases = 8)
+        val threePoint = poolItem(id = "bed", cost = 3, maxPurchases = 2)
+        ClassSelectionState.selectionMode = SelectionMode.EMBARK_POINTS
+        ClassSelectionState.pointQuota = 6
+        ClassSelectionState.embarkItems = listOf(onePoint, threePoint)
+        ClassSelectionState.embarkPurchases["torch"] = 1
+
+        val spent = ClassSelectionState.randomizeEmbarkPurchases(Random(7))
+
+        assertEquals(6, spent)
+        assertEquals(6, ClassSelectionState.spentEmbarkPoints())
+        assertEquals(0, ClassSelectionState.remainingEmbarkPoints())
+        assertTrue(ClassSelectionState.selectedEmbarkPurchases().isNotEmpty())
+    }
+
+    @Test
+    fun randomizeEmbarkPurchasesUsesBestReachableSpendInsteadOfGreedyLeftover() {
+        val threePoint = poolItem(id = "shield", cost = 3, maxPurchases = 1)
+        val twoPoint = poolItem(id = "rope", cost = 2, maxPurchases = 2)
+        ClassSelectionState.selectionMode = SelectionMode.EMBARK_POINTS
+        ClassSelectionState.pointQuota = 4
+        ClassSelectionState.embarkItems = listOf(threePoint, twoPoint)
+
+        val spent = ClassSelectionState.randomizeEmbarkPurchases(Random(11))
+
+        assertEquals(4, spent)
+        assertNull(ClassSelectionState.embarkPurchases["shield"])
+        assertEquals(2, ClassSelectionState.embarkPurchases["rope"])
+        assertEquals(0, ClassSelectionState.remainingEmbarkPoints())
+    }
+
+    @Test
+    fun randomizeEmbarkPurchasesLeavesOnlyUnavoidableRemainder() {
+        val fivePoint = poolItem(id = "boat", cost = 5, maxPurchases = 1)
+        val threePoint = poolItem(id = "food", cost = 3, maxPurchases = 1)
+        ClassSelectionState.selectionMode = SelectionMode.EMBARK_POINTS
+        ClassSelectionState.pointQuota = 7
+        ClassSelectionState.embarkItems = listOf(fivePoint, threePoint)
+
+        val spent = ClassSelectionState.randomizeEmbarkPurchases(Random(19))
+
+        assertEquals(5, spent)
+        assertEquals(5, ClassSelectionState.spentEmbarkPoints())
+        assertEquals(2, ClassSelectionState.remainingEmbarkPoints())
     }
 
     private fun poolItem(
