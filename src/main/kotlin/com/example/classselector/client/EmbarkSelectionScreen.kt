@@ -29,7 +29,8 @@ class EmbarkSelectionScreen(
         private const val TEXT_GOOD = 0xA7E0A4
         private const val TEXT_BAD = 0xD58A8A
         private const val BUTTON_HEIGHT = 20
-        private const val ROW_HEIGHT = 42
+        private const val ROW_HEIGHT = 20
+        private const val ITEM_COLUMNS = 2
         private const val ACTION_BUTTON_COUNT = 5
     }
 
@@ -71,22 +72,22 @@ class EmbarkSelectionScreen(
         }
 
         val layout = computeLayout()
-        val rows = rowsPerPage(layout)
-        page = page.coerceIn(0, maxPage(rows))
+        val capacity = pageCapacity(layout)
+        page = page.coerceIn(0, maxPage(capacity))
 
-        repeat(rows) { row ->
-            val rowTop = poolRowTop(layout) + row * ROW_HEIGHT
+        repeat(capacity) { index ->
+            val cell = itemCell(layout, index)
             minusButtons += addRenderableWidget(
                 Button.builder(Component.literal("-")) {
-                    visibleItems().getOrNull(row)?.let(ClassSelectionState::removeEmbarkPurchase)
+                    visibleItems().getOrNull(index)?.let(ClassSelectionState::removeEmbarkPurchase)
                     refreshButtonState()
-                }.pos(layout.leftX + layout.leftWidth - 52, rowTop + 11).size(20, BUTTON_HEIGHT).build()
+                }.pos(cell.controlX, cell.y).size(18, BUTTON_HEIGHT).build()
             )
             plusButtons += addRenderableWidget(
                 Button.builder(Component.literal("+")) {
-                    visibleItems().getOrNull(row)?.let(ClassSelectionState::addEmbarkPurchase)
+                    visibleItems().getOrNull(index)?.let(ClassSelectionState::addEmbarkPurchase)
                     refreshButtonState()
-                }.pos(layout.leftX + layout.leftWidth - 28, rowTop + 11).size(20, BUTTON_HEIGHT).build()
+                }.pos(cell.controlX + 20, cell.y).size(18, BUTTON_HEIGHT).build()
             )
         }
 
@@ -99,7 +100,7 @@ class EmbarkSelectionScreen(
         )
         nextPageButton = addRenderableWidget(
             Button.builder(Component.literal(">")) {
-                page = (page + 1).coerceAtMost(maxPage(rows))
+                page = (page + 1).coerceAtMost(maxPage(capacity))
                 refreshButtonState()
             }.pos(layout.leftX + layout.leftWidth - 44, pageY).size(36, BUTTON_HEIGHT).build()
         )
@@ -157,8 +158,8 @@ class EmbarkSelectionScreen(
     }
 
     private fun refreshButtonState() {
-        val rows = minusButtons.size.coerceAtLeast(1)
-        page = page.coerceIn(0, maxPage(rows))
+        val capacity = minusButtons.size.coerceAtLeast(1)
+        page = page.coerceIn(0, maxPage(capacity))
         val visible = visibleItems()
 
         minusButtons.forEachIndexed { index, button ->
@@ -175,7 +176,7 @@ class EmbarkSelectionScreen(
         }
 
         previousPageButton?.active = page > 0
-        nextPageButton?.active = page < maxPage(rows)
+        nextPageButton?.active = page < maxPage(capacity)
         lockRespawnButton?.active = ClassSelectionState.activeInCurrentWorld
         clearRespawnButton?.active = ClassSelectionState.activeInCurrentWorld && ClassSelectionState.lockedRespawn != null
         clearSuppliesButton?.active = ClassSelectionState.activeInCurrentWorld && ClassSelectionState.embarkPurchases.isNotEmpty()
@@ -229,33 +230,33 @@ class EmbarkSelectionScreen(
         y += 14
 
         visibleItems().forEachIndexed { index, item ->
-            val rowTop = poolRowTop(layout) + index * ROW_HEIGHT
+            val cell = itemCell(layout, index)
+            val rowTop = cell.y
             val stack = KitItemStackFactory.create(item.item, item.count) ?: ItemStack.EMPTY
             val quantity = ClassSelectionState.embarkPurchases[item.id] ?: 0
-            val rowBottom = rowTop + ROW_HEIGHT - 2
+            val rowBottom = rowTop + ROW_HEIGHT - 1
             val rowColor = if (quantity > 0) 0x55304024 else 0x4411141A
 
-            gui.fill(innerX - 2, rowTop, innerX + innerWidth + 2, rowBottom, rowColor)
+            gui.fill(cell.x, rowTop, cell.x + cell.width - 4, rowBottom, rowColor)
             if (!stack.isEmpty) {
-                gui.renderFakeItem(stack, innerX + 4, rowTop + 12)
-                gui.renderItemDecorations(font, stack, innerX + 4, rowTop + 12)
-                if (mouseX in (innerX + 4) until (innerX + 20) && mouseY in (rowTop + 12) until (rowTop + 28)) {
+                gui.renderFakeItem(stack, cell.x + 2, rowTop + 2)
+                gui.renderItemDecorations(font, stack, cell.x + 2, rowTop + 2)
+                if (mouseX in (cell.x + 2) until (cell.x + 18) && mouseY in (rowTop + 2) until (rowTop + 18)) {
                     hoveredItem = stack
                 }
             }
 
-            val textX = innerX + 26
-            val controlsX = layout.leftX + layout.leftWidth - 56
+            val textX = cell.x + 22
+            val controlsX = cell.controlX - 3
             val textWidth = (controlsX - textX - 4).coerceAtLeast(60)
             val metaColor = rowMetaColor(item, quantity)
 
-            gui.drawString(font, Component.literal(fitText(item.title, textWidth)), textX, rowTop + 3, TEXT_PRIMARY)
-            gui.drawString(font, Component.literal(fitText(item.blurb, textWidth)), textX, rowTop + 14, TEXT_MUTED)
-            gui.drawString(font, Component.literal(fitText(rowMetaLabel(item, quantity), textWidth)), textX, rowTop + 25, metaColor)
+            gui.drawString(font, Component.literal(fitText(item.title, textWidth)), textX, rowTop + 1, TEXT_PRIMARY)
+            gui.drawString(font, Component.literal(fitText(rowMetaLabel(item, quantity), textWidth)), textX, rowTop + 11, metaColor)
         }
 
-        val rows = rowsPerPage(layout)
-        val pageLabel = "Page ${page + 1} / ${maxPage(rows) + 1}"
+        val capacity = pageCapacity(layout)
+        val pageLabel = "Page ${page + 1} / ${maxPage(capacity) + 1}"
         gui.drawCenteredString(font, Component.literal(pageLabel), layout.leftX + layout.leftWidth / 2, layout.bottom - 22, TEXT_MUTED)
     }
 
@@ -385,8 +386,29 @@ class EmbarkSelectionScreen(
 
     private fun rowsPerPage(layout: Layout): Int {
         val availableHeight = layout.bottom - poolRowTop(layout) - 36
-        return (availableHeight / ROW_HEIGHT).coerceIn(1, 8)
+        val neededRows = ((poolItems.size + ITEM_COLUMNS - 1) / ITEM_COLUMNS).coerceAtLeast(1)
+        return (availableHeight / ROW_HEIGHT).coerceIn(1, neededRows.coerceAtMost(20))
     }
+
+    private data class ItemCell(val x: Int, val y: Int, val width: Int, val controlX: Int)
+
+    private fun itemCell(layout: Layout, index: Int): ItemCell {
+        val innerX = layout.leftX + 8
+        val innerWidth = layout.leftWidth - 16
+        val columnWidth = innerWidth / ITEM_COLUMNS
+        val column = index % ITEM_COLUMNS
+        val row = index / ITEM_COLUMNS
+        val x = innerX + column * columnWidth
+        val width = if (column == ITEM_COLUMNS - 1) innerWidth - columnWidth * column else columnWidth
+        return ItemCell(
+            x = x,
+            y = poolRowTop(layout) + row * ROW_HEIGHT,
+            width = width,
+            controlX = x + width - 44
+        )
+    }
+
+    private fun pageCapacity(layout: Layout): Int = rowsPerPage(layout) * ITEM_COLUMNS
 
     private fun poolRowTop(layout: Layout): Int = layout.top + 42
 
@@ -395,11 +417,11 @@ class EmbarkSelectionScreen(
     }
 
     private fun visibleItems(): List<EmbarkPoolItem> {
-        val rows = minusButtons.size.coerceAtLeast(1)
-        return poolItems.drop(page * rows).take(rows)
+        val capacity = minusButtons.size.coerceAtLeast(1)
+        return poolItems.drop(page * capacity).take(capacity)
     }
 
-    private fun maxPage(rows: Int): Int = ((poolItems.size - 1) / rows.coerceAtLeast(1)).coerceAtLeast(0)
+    private fun maxPage(capacity: Int): Int = ((poolItems.size - 1) / capacity.coerceAtLeast(1)).coerceAtLeast(0)
 
     private fun slotLabel(item: EmbarkPoolItem): String {
         val label = KitSlot.label(item.slot) ?: return ""
