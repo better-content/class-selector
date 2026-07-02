@@ -29,10 +29,29 @@ class EmbarkSelectionScreen(
         private const val TEXT_GOOD = 0xA7E0A4
         private const val TEXT_BAD = 0xD58A8A
         private const val BUTTON_HEIGHT = 20
-        private const val ROW_HEIGHT = 20
+        private const val ROW_HEIGHT = 32
         private const val ITEM_COLUMNS = 2
         private const val ACTION_BUTTON_COUNT = 5
+        private const val RECOMMENDED_FILTER_ID = "recommended"
+        private const val ALL_FILTER_ID = "all"
+        private const val RECOMMENDED_ITEM_COUNT = 12
+        private val RECOMMENDED_ITEM_IDS = listOf(
+            "filled_waterskin",
+            "terracotta_bowl",
+            "torch_bundle",
+            "lantern",
+            "campfire",
+            "rope_coil",
+            "compass",
+            "empty_map",
+            "apple_ration",
+            "bread_ration",
+            "wheat_seeds",
+            "string_bundle"
+        )
     }
+
+    private data class ItemFilter(val id: String, val label: String)
 
     private data class Layout(
         val leftX: Int,
@@ -54,11 +73,15 @@ class EmbarkSelectionScreen(
     private var clearSuppliesButton: Button? = null
     private var randomizeSuppliesButton: Button? = null
     private var beginButton: Button? = null
+    private val filterButtons: MutableList<Button> = mutableListOf()
+    private var selectedFilterId: String = RECOMMENDED_FILTER_ID
+    private var filterAreaBottom: Int = 0
     private var hoveredItem: ItemStack = ItemStack.EMPTY
 
     override fun init() {
         minusButtons.clear()
         plusButtons.clear()
+        filterButtons.clear()
 
         if (poolItems.isEmpty()) {
             previousPageButton = null
@@ -72,6 +95,7 @@ class EmbarkSelectionScreen(
         }
 
         val layout = computeLayout()
+        buildFilterButtons(layout)
         val capacity = pageCapacity(layout)
         page = page.coerceIn(0, maxPage(capacity))
 
@@ -177,6 +201,11 @@ class EmbarkSelectionScreen(
 
         previousPageButton?.active = page > 0
         nextPageButton?.active = page < maxPage(capacity)
+        filterButtons.forEachIndexed { index, button ->
+            val filter = filters().getOrNull(index)
+            button.visible = filter != null
+            button.active = filter != null && filter.id != selectedFilterId
+        }
         lockRespawnButton?.active = ClassSelectionState.activeInCurrentWorld
         clearRespawnButton?.active = ClassSelectionState.activeInCurrentWorld && ClassSelectionState.lockedRespawn != null
         clearSuppliesButton?.active = ClassSelectionState.activeInCurrentWorld && ClassSelectionState.embarkPurchases.isNotEmpty()
@@ -228,6 +257,7 @@ class EmbarkSelectionScreen(
         val spentLabel = "Spent: $spent"
         gui.drawString(font, Component.literal(spentLabel), innerX + innerWidth - font.width(spentLabel), y, TEXT_MUTED)
         y += 14
+        gui.drawString(font, Component.literal(currentFilterCaption()), innerX, y, TEXT_WARM)
 
         visibleItems().forEachIndexed { index, item ->
             val cell = itemCell(layout, index)
@@ -252,7 +282,8 @@ class EmbarkSelectionScreen(
             val metaColor = rowMetaColor(item, quantity)
 
             gui.drawString(font, Component.literal(fitText(item.title, textWidth)), textX, rowTop + 1, TEXT_PRIMARY)
-            gui.drawString(font, Component.literal(fitText(rowMetaLabel(item, quantity), textWidth)), textX, rowTop + 11, metaColor)
+            gui.drawString(font, Component.literal(fitText(item.blurb, textWidth)), textX, rowTop + 11, TEXT_MUTED)
+            gui.drawString(font, Component.literal(fitText(rowMetaLabel(item, quantity), textWidth)), textX, rowTop + 21, metaColor)
         }
 
         val capacity = pageCapacity(layout)
@@ -386,7 +417,7 @@ class EmbarkSelectionScreen(
 
     private fun rowsPerPage(layout: Layout): Int {
         val availableHeight = layout.bottom - poolRowTop(layout) - 36
-        val neededRows = ((poolItems.size + ITEM_COLUMNS - 1) / ITEM_COLUMNS).coerceAtLeast(1)
+        val neededRows = ((filteredItems().size + ITEM_COLUMNS - 1) / ITEM_COLUMNS).coerceAtLeast(1)
         return (availableHeight / ROW_HEIGHT).coerceIn(1, neededRows.coerceAtMost(20))
     }
 
@@ -410,7 +441,7 @@ class EmbarkSelectionScreen(
 
     private fun pageCapacity(layout: Layout): Int = rowsPerPage(layout) * ITEM_COLUMNS
 
-    private fun poolRowTop(layout: Layout): Int = layout.top + 42
+    private fun poolRowTop(layout: Layout): Int = filterAreaBottom + 10
 
     private fun actionAreaTop(layout: Layout): Int {
         return layout.bottom - 8 - ((BUTTON_HEIGHT + 4) * ACTION_BUTTON_COUNT)
@@ -418,10 +449,10 @@ class EmbarkSelectionScreen(
 
     private fun visibleItems(): List<EmbarkPoolItem> {
         val capacity = minusButtons.size.coerceAtLeast(1)
-        return poolItems.drop(page * capacity).take(capacity)
+        return filteredItems().drop(page * capacity).take(capacity)
     }
 
-    private fun maxPage(capacity: Int): Int = ((poolItems.size - 1) / capacity.coerceAtLeast(1)).coerceAtLeast(0)
+    private fun maxPage(capacity: Int): Int = ((filteredItems().size - 1) / capacity.coerceAtLeast(1)).coerceAtLeast(0)
 
     private fun slotLabel(item: EmbarkPoolItem): String {
         val label = KitSlot.label(item.slot) ?: return ""
@@ -431,10 +462,10 @@ class EmbarkSelectionScreen(
     private fun rowMetaLabel(item: EmbarkPoolItem, quantity: Int): String {
         val parts = mutableListOf<String>()
         item.category?.takeIf { it.isNotBlank() }?.let(parts::add)
-        parts += "Cost ${item.cost}"
-        parts += "Qty $quantity/${item.maxPurchases}"
+        parts += "${item.cost} pt"
+        parts += "Picked $quantity/${item.maxPurchases}"
         parts += "Gives ${item.count}"
-        slotLabel(item).takeIf { it.isNotBlank() }?.let { parts += it }
+        slotLabel(item).takeIf { it.isNotBlank() && it != "Inventory" }?.let { parts += it }
         parts += purchaseStateLabel(item, quantity)
         return parts.joinToString(" | ")
     }
@@ -470,5 +501,73 @@ class EmbarkSelectionScreen(
         val suffix = "..."
         val width = (maxWidth - font.width(suffix)).coerceAtLeast(0)
         return font.plainSubstrByWidth(text, width).trimEnd() + suffix
+    }
+
+    private fun buildFilterButtons(layout: Layout) {
+        val filters = filters()
+        val startX = layout.leftX + 8
+        val maxX = layout.leftX + layout.leftWidth - 8
+        var x = startX
+        var y = layout.top + 42
+
+        filters.forEach { filter ->
+            val buttonWidth = (font.width(filter.label) + 16).coerceIn(58, 110)
+            if (x + buttonWidth > maxX) {
+                x = startX
+                y += BUTTON_HEIGHT + 4
+            }
+            filterButtons += addRenderableWidget(
+                Button.builder(Component.literal(filter.label)) {
+                    selectedFilterId = filter.id
+                    page = 0
+                    refreshButtonState()
+                }.pos(x, y).size(buttonWidth, BUTTON_HEIGHT).build()
+            )
+            x += buttonWidth + 4
+        }
+
+        filterAreaBottom = y + BUTTON_HEIGHT
+    }
+
+    private fun filters(): List<ItemFilter> {
+        val categories = linkedSetOf<String>()
+        poolItems.forEach { item ->
+            item.category?.trim()?.takeIf { it.isNotEmpty() }?.let(categories::add)
+        }
+        return buildList {
+            add(ItemFilter(RECOMMENDED_FILTER_ID, "Recommended"))
+            add(ItemFilter(ALL_FILTER_ID, "All"))
+            categories.forEach { category ->
+                add(ItemFilter(category.lowercase(), category))
+            }
+        }
+    }
+
+    private fun filteredItems(): List<EmbarkPoolItem> {
+        return when (selectedFilterId) {
+            RECOMMENDED_FILTER_ID -> recommendedItems()
+            ALL_FILTER_ID -> poolItems
+            else -> poolItems.filter { it.category?.trim()?.equals(selectedFilterId, ignoreCase = true) == true }
+        }
+    }
+
+    private fun recommendedItems(): List<EmbarkPoolItem> {
+        val byId = poolItems.associateBy { it.id }
+        val curated = RECOMMENDED_ITEM_IDS.mapNotNull(byId::get)
+        if (curated.size >= RECOMMENDED_ITEM_COUNT) return curated.take(RECOMMENDED_ITEM_COUNT)
+
+        val usedIds = curated.mapTo(linkedSetOf(), EmbarkPoolItem::id)
+        return curated + poolItems.asSequence()
+            .filterNot { it.id in usedIds }
+            .take(RECOMMENDED_ITEM_COUNT - curated.size)
+            .toList()
+    }
+
+    private fun currentFilterCaption(): String {
+        return when (selectedFilterId) {
+            RECOMMENDED_FILTER_ID -> "Starter-friendly picks"
+            ALL_FILTER_ID -> "Full embark pool"
+            else -> filters().firstOrNull { it.id == selectedFilterId }?.label ?: "Filtered"
+        }
     }
 }
