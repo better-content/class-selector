@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val kotlinForForgeJar = "vendor/mods/kotlinforforge-${property("kotlinforforge_version")}-all.jar"
 val curiosMappedJar = "vendor/mods/curios-forge-${property("curios_version")}_mapped_parchment_${property("parchment_version")}.jar"
+val curiosApiNotation = "top.theillusivec4.curios:curios-forge:${property("curios_version")}:api"
 
 plugins {
     idea
@@ -63,8 +64,16 @@ repositories {
 
 dependencies {
     minecraft("net.minecraftforge:forge:${property("minecraft_version")}-${property("forge_version")}")
-    implementation(files(kotlinForForgeJar))
-    compileOnly(files(curiosMappedJar))
+    if (file(kotlinForForgeJar).exists()) {
+        implementation(files(kotlinForForgeJar))
+    } else {
+        implementation("thedarkcolour:kotlinforforge:${property("kotlinforforge_version")}")
+    }
+    if (file(curiosMappedJar).exists()) {
+        compileOnly(files(curiosMappedJar))
+    } else {
+        compileOnly(fg.deobf(curiosApiNotation))
+    }
 
     testImplementation(kotlin("test"))
 }
@@ -122,6 +131,7 @@ val syncGameTestStructures by tasks.registering(Copy::class) {
 val installDevMods by tasks.registering(Copy::class) {
     from(curiosMappedJar)
     into(layout.projectDirectory.dir("run/mods"))
+    onlyIf { file(curiosMappedJar).exists() }
 }
 
 tasks.configureEach {
