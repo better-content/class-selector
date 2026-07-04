@@ -61,11 +61,13 @@ Project URLs:
 
 Use Java 17 for all commands.
 
-### Unit tests
+### Verification
 ```bash
-JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH ./gradlew test
+JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH ./gradlew verifyFast
+JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH ./gradlew verifyFull
 ```
 
+`verifyFast` runs the JVM and coverage lane. `verifyFull` adds the headless Forge GameTest pass.
 
 ### Local client
 ```bash
@@ -73,10 +75,3 @@ JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH
 ```
 
 `run-client` is a small helper that runs `gradle runClient` for convenience.
-
-### Headless Forge GameTests
-```bash
-JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH ./gradlew headlessGameTest
-```
-
-This runs Forge's `runGameTestServer` task through a verification alias.
