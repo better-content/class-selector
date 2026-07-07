@@ -15,10 +15,10 @@ object SelectionDataRepository {
 
     fun load(): SelectionData {
         val embarkSettings = EmbarkConfigRepository.load()
-        val kits = if (embarkSettings.mode == SelectionMode.CLASS) {
-            ClassKitRepository.load()
-        } else {
-            ClassKitRepository.get()
+        val kits = when (embarkSettings.mode) {
+            SelectionMode.CLASS -> ClassKitRepository.load()
+            SelectionMode.NONE,
+            SelectionMode.EMBARK_POINTS -> ClassKitRepository.get()
         }
         val data = SelectionData(
             mode = embarkSettings.mode,

@@ -15,7 +15,7 @@ data class PendingRespawnSelection(
 
 object ClassSelectionState {
     var activeInCurrentWorld: Boolean = false
-    var selectionMode: SelectionMode = SelectionMode.CLASS
+    var selectionMode: SelectionMode = SelectionMode.NONE
     var kits: List<ClassKit> = emptyList()
     var embarkItems: List<EmbarkPoolItem> = emptyList()
     var pointQuota: Int = 0
@@ -33,6 +33,7 @@ object ClassSelectionState {
     }
 
     fun hasSelectionOptions(): Boolean = when (selectionMode) {
+        SelectionMode.NONE -> true
         SelectionMode.CLASS -> kits.isNotEmpty()
         SelectionMode.EMBARK_POINTS -> pointQuota > 0 && embarkItems.isNotEmpty()
     }
@@ -123,7 +124,7 @@ object ClassSelectionState {
 
     fun reset() {
         activeInCurrentWorld = false
-        selectionMode = SelectionMode.CLASS
+        selectionMode = SelectionMode.NONE
         kits = emptyList()
         embarkItems = emptyList()
         pointQuota = 0

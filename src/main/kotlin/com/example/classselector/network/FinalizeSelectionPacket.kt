@@ -30,6 +30,17 @@ class FinalizeSelectionPacket(
         private const val MAX_SELECTION_ID_LENGTH: Int = 128
         private const val MAX_PURCHASES: Int = 256
 
+        fun spawnOnly(dimensionId: String, x: Int, y: Int, z: Int): FinalizeSelectionPacket =
+            FinalizeSelectionPacket(
+                selectionMode = SelectionMode.NONE.wireName,
+                classId = "",
+                embarkPurchases = emptyList(),
+                dimensionId = dimensionId,
+                x = x,
+                y = y,
+                z = z
+            )
+
         fun classSelection(classId: String, dimensionId: String, x: Int, y: Int, z: Int): FinalizeSelectionPacket =
             FinalizeSelectionPacket(
                 selectionMode = SelectionMode.CLASS.wireName,
@@ -101,7 +112,6 @@ class FinalizeSelectionPacket(
                 val player = ctx.sender ?: return@enqueueWork
                 if (!ClassSelectorScope.isActiveIn(player.server)) return@enqueueWork
                 if (OnboardingIntegration.hasCompletedOnboarding(player)) return@enqueueWork
-                if (KitApplicator.hasSelectedClass(player)) return@enqueueWork
 
                 val selectionData = SelectionDataRepository.getOrLoad()
                 val requestedMode = runCatching { SelectionMode.parse(packet.selectionMode) }.getOrNull()
@@ -122,6 +132,11 @@ class FinalizeSelectionPacket(
                 val spawnId = OnboardingIntegration.buildSpawnId(resolvedPoint)
 
                 val selectionName = when (selectionData.mode) {
+                    SelectionMode.NONE -> {
+                        OnboardingIntegration.finalizeOnboarding(player, "spawn_only", spawnId)
+                        "Starting site locked"
+                    }
+
                     SelectionMode.CLASS -> {
                         val kit = selectionData.kits.firstOrNull { it.id == packet.classId }
                         if (kit == null) {

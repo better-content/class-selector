@@ -47,10 +47,34 @@ class EmbarkConfigRepositoryTest {
 
     @Test
     fun parsesModeAliases() {
+        assertEquals(SelectionMode.NONE, SelectionMode.parse("none"))
+        assertEquals(SelectionMode.NONE, SelectionMode.parse("spawn_only"))
         assertEquals(SelectionMode.CLASS, SelectionMode.parse("class"))
         assertEquals(SelectionMode.CLASS, SelectionMode.parse("classes"))
         assertEquals(SelectionMode.EMBARK_POINTS, SelectionMode.parse("embark"))
         assertEquals(SelectionMode.EMBARK_POINTS, SelectionMode.parse("point_buy"))
+    }
+
+    @Test
+    fun allowsDormantEmbarkDataInNoneMode() {
+        val settings = EmbarkSettings(
+            mode = SelectionMode.NONE,
+            pointQuota = 8,
+            items = listOf(poolItem())
+        )
+
+        assertEquals(SelectionMode.NONE, EmbarkConfigRepository.validate(settings).mode)
+    }
+
+    @Test
+    fun allowsDormantEmbarkDataInClassMode() {
+        val settings = EmbarkSettings(
+            mode = SelectionMode.CLASS,
+            pointQuota = 8,
+            items = listOf(poolItem())
+        )
+
+        assertEquals(SelectionMode.CLASS, EmbarkConfigRepository.validate(settings).mode)
     }
 
     @Test

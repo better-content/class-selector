@@ -40,9 +40,14 @@ object EmbarkConfigRepository {
     internal fun validate(settings: EmbarkSettings): EmbarkSettings {
         require(settings.pointQuota >= 0) { "Embark pointQuota cannot be negative at ${embarkPath()}" }
 
-        if (settings.mode == SelectionMode.EMBARK_POINTS) {
-            require(settings.pointQuota > 0) { "Embark pointQuota must be positive at ${embarkPath()}" }
-            require(settings.items.isNotEmpty()) { "Embark mode requires at least one item in ${embarkPath()}" }
+        when (settings.mode) {
+            SelectionMode.NONE -> Unit
+            SelectionMode.CLASS -> Unit
+
+            SelectionMode.EMBARK_POINTS -> {
+                require(settings.pointQuota > 0) { "Embark pointQuota must be positive at ${embarkPath()}" }
+                require(settings.items.isNotEmpty()) { "Embark mode requires at least one item in ${embarkPath()}" }
+            }
         }
 
         val ids = settings.items.map { it.id }

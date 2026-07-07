@@ -46,7 +46,9 @@ object ClientForgeEvents {
         }
 
         if (ClassSelectionState.activeInCurrentWorld && ClassSelectionState.selectionRequired && ClientModEvents.openClassMenuKey.consumeClick()) {
-            if (ClassSelectionState.hasSelectionOptions()) {
+            if (ClassSelectionState.selectionMode == SelectionMode.NONE) {
+                finalizeSpawnOnlySelection(mc)
+            } else if (ClassSelectionState.hasSelectionOptions()) {
                 openSelectionScreen(mc)
             } else {
                 player.sendSystemMessage(Component.literal("Starting options are still syncing."))
@@ -57,13 +59,10 @@ object ClientForgeEvents {
             ClassSelectionState.promptOpen = false
             ClassSelectionState.reminderCooldownTicks = REMINDER_INTERVAL_TICKS
             player.displayClientMessage(
-                Component.translatable(
-                    "message.classselector.lock_in_prompt",
-                    ClientModEvents.openClassMenuKey.translatedKeyMessage
-                ),
+                lockInPromptComponent(),
                 true
             )
-            if (ClassSelectionState.hasSelectionOptions()) {
+            if (ClassSelectionState.selectionMode != SelectionMode.NONE && ClassSelectionState.hasSelectionOptions()) {
                 openSelectionScreen(mc)
             }
             return
@@ -80,20 +79,50 @@ object ClientForgeEvents {
 
         ClassSelectionState.reminderCooldownTicks = REMINDER_INTERVAL_TICKS
         player.displayClientMessage(
-            Component.translatable(
-                "message.classselector.lock_in_reminder",
-                ClientModEvents.openClassMenuKey.translatedKeyMessage
-            ),
+            lockInReminderComponent(),
             true
         )
     }
 
+    private fun finalizeSpawnOnlySelection(mc: Minecraft) {
+        ClientOnboardingActions.submitSpawnOnly(mc)
+    }
+
     private fun openSelectionScreen(mc: Minecraft) {
         when (ClassSelectionState.selectionMode) {
+            SelectionMode.NONE -> {}
             SelectionMode.CLASS -> mc.setScreen(ClassSelectionScreen(ClassSelectionState.kits))
             SelectionMode.EMBARK_POINTS -> mc.setScreen(
                 EmbarkSelectionScreen(ClassSelectionState.embarkItems, ClassSelectionState.pointQuota)
             )
         }
     }
+
+    private fun lockInPromptComponent(): Component =
+        when (ClassSelectionState.selectionMode) {
+            SelectionMode.NONE -> Component.translatable(
+                "message.classselector.spawn_only_prompt",
+                ClientModEvents.openClassMenuKey.translatedKeyMessage
+            )
+
+            SelectionMode.CLASS,
+            SelectionMode.EMBARK_POINTS -> Component.translatable(
+                "message.classselector.lock_in_prompt",
+                ClientModEvents.openClassMenuKey.translatedKeyMessage
+            )
+        }
+
+    private fun lockInReminderComponent(): Component =
+        when (ClassSelectionState.selectionMode) {
+            SelectionMode.NONE -> Component.translatable(
+                "message.classselector.spawn_only_reminder",
+                ClientModEvents.openClassMenuKey.translatedKeyMessage
+            )
+
+            SelectionMode.CLASS,
+            SelectionMode.EMBARK_POINTS -> Component.translatable(
+                "message.classselector.lock_in_reminder",
+                ClientModEvents.openClassMenuKey.translatedKeyMessage
+            )
+        }
 }

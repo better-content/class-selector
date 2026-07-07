@@ -33,7 +33,7 @@ class ClassSelectionStateTest {
         ClassSelectionState.reset()
 
         assertFalse(ClassSelectionState.activeInCurrentWorld)
-        assertEquals(SelectionMode.CLASS, ClassSelectionState.selectionMode)
+        assertEquals(SelectionMode.NONE, ClassSelectionState.selectionMode)
         assertFalse(ClassSelectionState.promptOpen)
         assertFalse(ClassSelectionState.selectionRequired)
         assertTrue(ClassSelectionState.kits.isEmpty())
@@ -60,6 +60,27 @@ class ClassSelectionStateTest {
         assertTrue(ClassSelectionState.embarkPurchases.isEmpty())
         assertTrue(ClassSelectionState.kits.isNotEmpty())
         assertTrue(ClassSelectionState.kits[0].id == "miner")
+    }
+
+    @Test
+    fun noneModeDoesNotRequireSelectionPayloads() {
+        ClassSelectionState.selectionMode = SelectionMode.NONE
+
+        assertTrue(ClassSelectionState.hasSelectionOptions())
+        assertTrue(ClassSelectionState.selectedEmbarkPurchases().isEmpty())
+    }
+
+    @Test
+    fun submittingSelectionClearsPromptState() {
+        ClassSelectionState.selectionRequired = true
+        ClassSelectionState.promptOpen = true
+        ClassSelectionState.reminderCooldownTicks = 42
+
+        ClientOnboardingActions.markSelectionSubmitted()
+
+        assertFalse(ClassSelectionState.selectionRequired)
+        assertFalse(ClassSelectionState.promptOpen)
+        assertEquals(0, ClassSelectionState.reminderCooldownTicks)
     }
 
     @Test

@@ -53,7 +53,7 @@ class SyncClassesPacket(
             ctx.enqueueWork {
                 val previousMode = ClassSelectionState.selectionMode
                 val nextMode = runCatching { SelectionMode.parse(packet.selectionMode) }
-                    .getOrDefault(SelectionMode.CLASS)
+                    .getOrDefault(SelectionMode.NONE)
                 ClassSelectionState.activeInCurrentWorld = packet.activeInCurrentWorld
                 ClassSelectionState.selectionMode = nextMode
                 ClassSelectionState.pointQuota = packet.pointQuota

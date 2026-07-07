@@ -3,8 +3,6 @@ package com.example.classselector.client
 import com.example.classselector.embark.EmbarkPoolItem
 import com.example.classselector.kit.KitItemStackFactory
 import com.example.classselector.kit.KitSlot
-import com.example.classselector.network.ClassSelectorNetwork
-import com.example.classselector.network.FinalizeSelectionPacket
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.Screen
@@ -135,31 +133,22 @@ class EmbarkSelectionScreen(
 
         beginButton = addRenderableWidget(
             Button.builder(Component.literal("Begin")) {
-                val respawn = ClassSelectionState.lockedRespawn ?: return@builder
                 val purchases = ClassSelectionState.selectedEmbarkPurchases()
-                if (purchases.isEmpty()) return@builder
-                ClassSelectionState.selectionRequired = false
-                ClassSelectionState.promptOpen = false
-                ClassSelectionState.reminderCooldownTicks = 0
-                ClassSelectorNetwork.CHANNEL.sendToServer(
-                    FinalizeSelectionPacket.embarkSelection(purchases, respawn.dim, respawn.x, respawn.y, respawn.z)
-                )
+                if (!ClientOnboardingActions.submitEmbarkSelection(purchases)) return@builder
                 onClose()
             }.pos(actionX, actionBottom - BUTTON_HEIGHT).size(actionWidth, BUTTON_HEIGHT).build()
         )
 
         clearRespawnButton = addRenderableWidget(
             Button.builder(Component.literal("Unlock Respawn")) {
-                ClassSelectionState.lockedRespawn = null
+                ClientOnboardingActions.clearLockedRespawn()
                 refreshButtonState()
             }.pos(actionX, actionBottom - (BUTTON_HEIGHT + 4) * 2).size(actionWidth, BUTTON_HEIGHT).build()
         )
 
         lockRespawnButton = addRenderableWidget(
             Button.builder(Component.literal("Lock Current Respawn")) {
-                val player = minecraft?.player ?: return@builder
-                val dim = player.level().dimension().location().toString()
-                ClassSelectionState.lockedRespawn = PendingRespawnSelection(dim, player.blockX, player.blockY, player.blockZ)
+                if (!ClientOnboardingActions.lockCurrentRespawn(minecraft ?: return@builder)) return@builder
                 refreshButtonState()
             }.pos(actionX, actionBottom - (BUTTON_HEIGHT + 4) * 3).size(actionWidth, BUTTON_HEIGHT).build()
         )

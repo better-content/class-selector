@@ -2,6 +2,7 @@ package com.example.classselector
 
 import com.example.classselector.kit.KitApplicator
 import com.example.classselector.integration.OnboardingIntegration
+import com.example.classselector.embark.SelectionMode
 import com.example.classselector.embark.SelectionDataRepository
 import com.example.classselector.network.ClassSelectorNetwork
 import com.example.classselector.network.RequestOpenMenuPacket
@@ -75,9 +76,14 @@ object ServerEvents {
             return
         }
 
-        if (!KitApplicator.hasSelectedClass(player)) {
+        if (!OnboardingIntegration.hasCompletedOnboarding(player)) {
             player.setGameMode(GameType.SPECTATOR)
-            player.sendSystemMessage(Component.literal("Choose a class to begin."))
+            val joinPrompt = when (selectionData.mode) {
+                SelectionMode.NONE -> "Press K to set your starting spawn and begin."
+                SelectionMode.CLASS -> "Choose a class to begin."
+                SelectionMode.EMBARK_POINTS -> "Choose your starting supplies and respawn to begin."
+            }
+            player.sendSystemMessage(Component.literal(joinPrompt))
             ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { player }, RequestOpenMenuPacket())
             return
         }

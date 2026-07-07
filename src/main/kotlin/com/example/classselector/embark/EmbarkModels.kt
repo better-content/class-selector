@@ -3,6 +3,7 @@ package com.example.classselector.embark
 import com.example.classselector.kit.KitItem
 
 enum class SelectionMode(val wireName: String) {
+    NONE("none"),
     CLASS("class"),
     EMBARK_POINTS("embark_points");
 
@@ -10,10 +11,11 @@ enum class SelectionMode(val wireName: String) {
         fun parse(rawMode: String?): SelectionMode {
             val normalized = rawMode?.trim()?.lowercase().orEmpty()
             return when (normalized) {
+                "none", "disabled", "spawn_only", "respawn_only" -> NONE
                 "", "class", "classes" -> CLASS
                 "embark", "embark_points", "point_buy", "points" -> EMBARK_POINTS
                 else -> throw IllegalArgumentException(
-                    "Unsupported selection mode '$rawMode'. Supported modes are 'class' and 'embark_points'."
+                    "Unsupported selection mode '$rawMode'. Supported modes are 'none', 'class', and 'embark_points'."
                 )
             }
         }
