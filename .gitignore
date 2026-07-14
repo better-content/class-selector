@@ -5,3 +5,8 @@ build/
 # Gradle wrapper binary excluded due binary-file policy in this environment
 gradle/wrapper/gradle-wrapper.jar
 run/
+logs/
+*.log
+*.log.gz
+.idea/
+*.iml
