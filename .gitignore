@@ -1,6 +1,10 @@
 .gradle/
+.gradle-local/
+.kotlin/
 build/
 .codex
+logs/
+.idea/
 
 # Gradle wrapper binary excluded due binary-file policy in this environment
 gradle/wrapper/gradle-wrapper.jar
