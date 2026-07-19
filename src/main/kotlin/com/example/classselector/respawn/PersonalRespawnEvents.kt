@@ -3,6 +3,7 @@ package com.example.classselector.respawn
 import com.example.classselector.ClassSelectorMod
 import com.example.classselector.ClassSelectorScope
 import com.example.classselector.integration.OnboardingIntegration
+import com.example.classselector.integration.OnboardingVisibilitySync
 import com.mojang.brigadier.Command
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.EntityArgument
@@ -56,6 +57,9 @@ object PersonalRespawnEvents {
     fun onServerTick(event: TickEvent.ServerTickEvent) {
         if (event.phase != TickEvent.Phase.END) return
         RespawnTaskScheduler.tick(event.server)
+        if (event.server.tickCount % 20 == 0) {
+            OnboardingVisibilitySync.sync(event.server)
+        }
     }
 
     @JvmStatic

@@ -15,19 +15,10 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.world.effect.MobEffectInstance
-import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.level.GameType
-import net.minecraft.world.level.levelgen.Heightmap
 import net.minecraft.world.level.block.Blocks
-import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.Mob
 import net.minecraft.world.entity.monster.Enemy
 import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.floor
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 private const val FX_DURATION_TICKS = 60L
 private const val FX_PULSE_EVERY_TICKS = 2L
@@ -47,9 +38,10 @@ private const val SOUND_PITCH_EVOKER = 0.9
 private const val RESPAWN_SNAP_RADIUS = 16
 private const val RESPAWN_VERTICAL_WEIGHT = 3
 private const val RESPAWN_REPEL_RADIUS = 64.0
-private const val RESPAWN_REPEL_MAX_HOSTILES = 24
-private const val RESPAWN_SLOWNESS_DURATION_TICKS = 30 * 20
-private const val RESPAWN_SLOWNESS_AMPLIFIER = 4
+const val RESPAWN_PURGE_TAG = "classselector:respawn_purge"
+
+internal fun isInsideRespawnPurge(dx: Double, dy: Double, dz: Double): Boolean =
+    dx * dx + dy * dy + dz * dz <= RESPAWN_REPEL_RADIUS * RESPAWN_REPEL_RADIUS
 
 data class PersonalRespawnPoint(val dim: String, val x: Int, val y: Int, val z: Int)
 data class PreparedRespawnPoint(val point: PersonalRespawnPoint, val sitePrepared: Boolean, val locationAdjusted: Boolean)
@@ -297,62 +289,18 @@ object PersonalRespawnService {
     }
 
     private fun applyRespawnProtection(player: ServerPlayer) {
-        repelHostileMobs(player)
+        purgeHostileMobs(player)
     }
 
-    private fun repelHostileMobs(player: ServerPlayer) {
+    private fun purgeHostileMobs(player: ServerPlayer) {
         val level = player.serverLevel()
         val hostiles = level.getEntities(player, player.boundingBox.inflate(RESPAWN_REPEL_RADIUS)) { entity ->
-            entity is Enemy
+            entity is Enemy && isInsideRespawnPurge(entity.x - player.x, entity.y - player.y, entity.z - player.z)
         }
-
-        hostiles
-            .sortedBy { it.distanceToSqr(player) }
-            .take(RESPAWN_REPEL_MAX_HOSTILES)
-            .forEach { hostile ->
-            val (unitX, unitZ) = repelDirection(player, hostile)
-            val targetX = player.x + (unitX * RESPAWN_REPEL_RADIUS)
-            val targetZ = player.z + (unitZ * RESPAWN_REPEL_RADIUS)
-            val targetY = safeTargetY(level, targetX, targetZ)
-            hostile.teleportTo(targetX, targetY, targetZ)
-            if (hostile is Mob) {
-                hostile.addEffect(
-                    MobEffectInstance(
-                        MobEffects.MOVEMENT_SLOWDOWN,
-                        RESPAWN_SLOWNESS_DURATION_TICKS,
-                        RESPAWN_SLOWNESS_AMPLIFIER,
-                        false,
-                        true,
-                        true
-                    )
-                )
-            }
-
-            if (hostile is Mob) {
-                hostile.target = null
-                hostile.navigation.stop()
-            }
+        hostiles.forEach { hostile ->
+            hostile.persistentData.putBoolean(RESPAWN_PURGE_TAG, true)
+            hostile.discard()
         }
-    }
-
-    private fun repelDirection(player: ServerPlayer, hostile: Entity): Pair<Double, Double> {
-        val dx = hostile.x - player.x
-        val dz = hostile.z - player.z
-        val distanceSquared = (dx * dx) + (dz * dz)
-        if (distanceSquared > 0.0001) {
-            val inverseDistance = 1.0 / sqrt(distanceSquared)
-            return (dx * inverseDistance) to (dz * inverseDistance)
-        }
-
-        val angle = ((hostile.id * 37) % 360) * (Math.PI / 180.0)
-        return cos(angle) to sin(angle)
-    }
-
-    private fun safeTargetY(level: ServerLevel, x: Double, z: Double): Double {
-        val blockX = floor(x).toInt()
-        val blockZ = floor(z).toInt()
-        val height = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, blockX, blockZ)
-        return height.coerceIn(level.minBuildHeight + 1, level.maxBuildHeight - 2).toDouble()
     }
 
     private fun playRespawnSoundForPlayer(server: MinecraftServer, player: ServerPlayer, point: PersonalRespawnPoint) {

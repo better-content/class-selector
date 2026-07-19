@@ -41,9 +41,12 @@ object ClientForgeEvents {
         val player = mc.player
 
         if (player == null) {
+            OnboardingPlayerVisibility.clear(mc)
             ClassSelectionState.reset()
             return
         }
+
+        OnboardingPlayerVisibility.tick(mc)
 
         if (ClassSelectionState.activeInCurrentWorld && ClassSelectionState.selectionRequired && ClientModEvents.openClassMenuKey.consumeClick()) {
             if (ClassSelectionState.selectionMode == SelectionMode.NONE) {

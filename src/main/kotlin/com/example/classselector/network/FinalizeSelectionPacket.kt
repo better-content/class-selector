@@ -6,6 +6,7 @@ import com.example.classselector.embark.EmbarkPurchaseService
 import com.example.classselector.embark.SelectionDataRepository
 import com.example.classselector.embark.SelectionMode
 import com.example.classselector.integration.OnboardingIntegration
+import com.example.classselector.integration.OnboardingVisibilitySync
 import com.example.classselector.kit.KitApplicator
 import com.example.classselector.network.FinalizeSelectionPacket.Companion.MAX_DIMENSION_ID_LENGTH
 import com.example.classselector.respawn.PersonalRespawnPoint
@@ -170,6 +171,7 @@ class FinalizeSelectionPacket(
                 }
 
                 PersonalRespawnService.releasePlayerFromSpectator(player)
+                OnboardingVisibilitySync.sync(player.server)
                 val message = when {
                     preparedPoint.sitePrepared && preparedPoint.locationAdjusted ->
                         "Starting loadout selected: $selectionName. Permanent respawn prepared at ${resolvedPoint.dim} ${resolvedPoint.x} ${resolvedPoint.y} ${resolvedPoint.z}."

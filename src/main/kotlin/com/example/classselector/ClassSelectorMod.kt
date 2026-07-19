@@ -2,6 +2,7 @@ package com.example.classselector
 
 import com.example.classselector.kit.KitApplicator
 import com.example.classselector.integration.OnboardingIntegration
+import com.example.classselector.integration.OnboardingVisibilitySync
 import com.example.classselector.embark.SelectionMode
 import com.example.classselector.embark.SelectionDataRepository
 import com.example.classselector.network.ClassSelectorNetwork
@@ -71,6 +72,7 @@ object ServerEvents {
             PacketDistributor.PLAYER.with { player },
             SyncClassesPacket.fromSelectionData(activeInWorld, selectionData)
         )
+        OnboardingVisibilitySync.sync(player.server)
 
         if (!activeInWorld) {
             return
@@ -103,5 +105,12 @@ object ServerEvents {
         }
         PersonalRespawnService.copyRespawnPoint(original, cloned)
         OnboardingIntegration.copyPersistentState(original, cloned)
+    }
+
+    @JvmStatic
+    @SubscribeEvent
+    fun onPlayerLogout(event: PlayerEvent.PlayerLoggedOutEvent) {
+        val player = event.entity as? ServerPlayer ?: return
+        OnboardingVisibilitySync.sync(player.server)
     }
 }
