@@ -1,226 +1,98 @@
 [
   {
-    "id": "miner",
-    "title": "Mining Specialist",
-    "blurb": "Mining, scouting, and controlled blasting",
-    "description": "Starts with mining tools, cave lighting, explosives, and a prospector's pick. Best for players who want to scout ore, clear tunnels, and return with resources quickly.",
+    "id": "wayfinder",
+    "title": "Wayfinder",
+    "blurb": "Scouting, maps, and route recovery",
+    "description": "Safe fallback kit for players who want to mark routes and recover from dangerous scouting without starting with tools, machines, metals, logs, or storage.",
     "items": [
-      {
-        "item": "tconstruct:pickaxe{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:leather\"],tic_modifiers:[{level:1,name:\"tconstruct:tanned\"},{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:pierce\"},{level:1,name:\"tconstruct:dwarven\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":1.5f,\"tconstruct:attack_speed\":1.2f,\"tconstruct:durability\":210.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "hotbar.0"
-      },
-      {
-        "item": "minecraft:lantern",
-        "count": 1,
-        "slot": "weapon.offhand"
-      },
-      {
-        "item": "tconstruct:sword{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:wood\"],tic_modifiers:[{level:2,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:dwarven\"},{level:1,name:\"tconstruct:silky_shears\"}],tic_multipliers:{\"tconstruct:durability\":1.1f,\"tconstruct:mining_speed\":0.5f},tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":3.5f,\"tconstruct:attack_speed\":1.6f,\"tconstruct:block_amount\":10.0f,\"tconstruct:durability\":231.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":2.5f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "tinkers_things:shovel{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\"],tic_modifiers:[{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:knockback\"},{level:1,name:\"tconstruct:pathing\"},{level:1,name:\"tconstruct:dwarven\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":2.0f,\"tconstruct:durability\":210.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:5}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "minecraft:torch",
-        "count": 32,
-        "slot": "inventory"
-      },
-      {
-        "item": "minecraft:tnt",
-        "count": 32,
-        "slot": "inventory"
-      },
-      {
-        "item": "minecraft:flint_and_steel",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "tconstruct:throwing_axe{tic_materials:[\"tconstruct:gunpowder\",\"tconstruct:wood\"],tic_modifiers:[{level:1,name:\"tconstruct:economical\"},{level:1,name:\"tconstruct:explosive\"}],tic_multipliers:{\"tconstruct:projectile_damage\":3.0f},tic_persistent:{},tic_stats:{\"tconstruct:accuracy\":0.5f,\"tconstruct:projectile_damage\":4.5f,\"tconstruct:velocity\":0.75f,\"tconstruct:water_inertia\":0.5f}}",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "rehooked:wood_hook",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "sophisticatedbackpacks:backpack",
-        "count": 1,
-        "slot": "inventory"
-      }
-    ]
-  },
-  {
-    "id": "lumberjack",
-    "title": "Lumberjack",
-    "blurb": "Wood harvesting and base supply",
-    "description": "Starts with a strong axe, logs, tree seeds, and basic utility gear. Best for players who want to secure wood, expand the base, and supply early building materials.",
-    "items": [
-      {
-        "item": "tconstruct:hand_axe{tic_materials:[\"tconstruct:cobalt\",\"tconstruct:treated_wood\",\"tconstruct:string\"],tic_modifiers:[{level:1,name:\"tconstruct:lightweight\"},{level:1,name:\"tconstruct:preserved\"},{level:1,name:\"tconstruct:stringy\"},{level:1,name:\"tconstruct:stripping\"}],tic_name:\"Ille Lignātor\",tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":7.4249997f,\"tconstruct:attack_speed\":0.972f,\"tconstruct:durability\":1150.0f,\"tconstruct:harvest_tier\":\"minecraft:diamond\",\"tconstruct:mining_speed\":6.3180003f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "hotbar.0"
-      },
-      {
-        "item": "tconstruct:pickaxe{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:leather\"],tic_modifiers:[{level:1,name:\"tconstruct:tanned\"},{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:pierce\"},{level:1,name:\"tconstruct:dwarven\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":1.5f,\"tconstruct:attack_speed\":1.2f,\"tconstruct:durability\":210.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "minecraft:dark_oak_log",
-        "count": 64,
-        "slot": "inventory"
-      },
-      {
-        "item": "chipped:carpenters_table",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "dynamictrees:dark_oak_seed",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "dynamictrees:mangrove_seed",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "dynamictrees:acacia_seed",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "rehooked:wood_hook",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "sophisticatedbackpacks:backpack",
-        "count": 1,
-        "slot": "inventory"
-      }
-    ]
-  },
-  {
-    "id": "farmer",
-    "title": "Farmer",
-    "blurb": "Crop production and food supply",
-    "description": "Starts with farming tools, a seasonal calendar, and a large set of crop seeds. Best for players who want to establish farms early and supply food ingredients for the group.",
-    "items": [
-      {
-        "item": "tconstruct:kama{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:iron\",\"tconstruct:wood\",\"tconstruct:leather\"],tic_modifiers:[{level:1,name:\"tconstruct:tanned\"},{level:1,name:\"tconstruct:magnetic\"},{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:tilling\"},{level:1,name:\"tconstruct:shears\"},{level:1,name:\"tconstruct:harvest\"}],tic_multipliers:{\"tconstruct:attack_damage\":0.5f},tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":1.5f,\"tconstruct:attack_speed\":1.6f,\"tconstruct:durability\":250.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":6.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "hotbar.0"
-      },
-      {
-        "item": "born_in_chaos_v1:spritual_guide_sombrero_hat",
-        "count": 1,
-        "slot": "armor:head"
-      },
-      {
-        "item": "tinkers_things:shovel{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\"],tic_modifiers:[{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:knockback\"},{level:1,name:\"tconstruct:pathing\"},{level:1,name:\"tconstruct:dwarven\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":2.0f,\"tconstruct:durability\":210.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:5}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "tconstruct:pickaxe{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:leather\"],tic_modifiers:[{level:1,name:\"tconstruct:tanned\"},{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:pierce\"},{level:1,name:\"tconstruct:dwarven\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":1.5f,\"tconstruct:attack_speed\":1.2f,\"tconstruct:durability\":210.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "tconstruct:sword{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:wood\"],tic_modifiers:[{level:2,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:dwarven\"},{level:1,name:\"tconstruct:silky_shears\"}],tic_multipliers:{\"tconstruct:durability\":1.1f,\"tconstruct:mining_speed\":0.5f},tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":3.5f,\"tconstruct:attack_speed\":1.6f,\"tconstruct:block_amount\":10.0f,\"tconstruct:durability\":231.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":2.5f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "sereneseasons:calendar",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "veggiesdelight:bellpepper_seeds",
-        "count": 32,
-        "slot": "inventory"
-      },
-      {
-        "item": "veggiesdelight:broccoli_seeds",
-        "count": 32,
-        "slot": "inventory"
-      },
-      {
-        "item": "veggiesdelight:cauliflower_seeds",
-        "count": 32,
-        "slot": "inventory"
-      },
-      {
-        "item": "veggiesdelight:turnip_seeds",
-        "count": 32,
-        "slot": "inventory"
-      },
-      {
-        "item": "veggiesdelight:zucchini_seeds",
-        "count": 32,
-        "slot": "inventory"
-      },
-      {
-        "item": "delightful:cantaloupe_seeds",
-        "count": 32,
-        "slot": "inventory"
-      },
-      {
-        "item": "farmersdelight:tomato_seeds",
-        "count": 32,
-        "slot": "inventory"
-      },
-      {
-        "item": "rehooked:wood_hook",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "sophisticatedbackpacks:backpack",
-        "count": 1,
-        "slot": "inventory"
-      }
-    ]
-  },
-  {
-    "id": "rail_engineer",
-    "title": "Rail Engineer",
-    "blurb": "Transport setup and route building",
-    "description": "Starts with rails, powered rails, minecarts, and basic tools. Best for players who want to build transport lines early and improve movement of players and materials.",
-    "items": [
-      {
-        "item": "tconstruct:pickaxe{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:leather\"],tic_modifiers:[{level:1,name:\"tconstruct:tanned\"},{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:pierce\"},{level:1,name:\"tconstruct:dwarven\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":1.5f,\"tconstruct:attack_speed\":1.2f,\"tconstruct:durability\":210.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "hotbar.0"
-      },
       {
         "item": "minecraft:compass",
         "count": 1,
         "slot": "weapon.offhand"
       },
       {
-        "item": "tconstruct:sword{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:wood\"],tic_modifiers:[{level:2,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:dwarven\"},{level:1,name:\"tconstruct:silky_shears\"}],tic_multipliers:{\"tconstruct:durability\":1.1f,\"tconstruct:mining_speed\":0.5f},tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":3.5f,\"tconstruct:attack_speed\":1.6f,\"tconstruct:block_amount\":10.0f,\"tconstruct:durability\":231.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":2.5f},tic_volatile_data:{abilities:1,upgrades:3}}",
+        "item": "minecraft:map",
+        "count": 2,
+        "slot": "inventory"
+      },
+      {
+        "item": "minecraft:spyglass",
         "count": 1,
         "slot": "inventory"
       },
       {
-        "item": "minecraft:rail",
-        "count": 128,
+        "item": "minecraft:paper",
+        "count": 8,
         "slot": "inventory"
       },
       {
-        "item": "minecraft:powered_rail",
+        "item": "minecraft:torch",
+        "count": 16,
+        "slot": "inventory"
+      },
+      {
+        "item": "thirst:terracotta_bowl",
+        "count": 1,
+        "slot": "inventory"
+      }
+    ]
+  },
+  {
+    "id": "field_cook",
+    "title": "Field Cook",
+    "blurb": "Food variety, crop starts, and hydration",
+    "description": "Safe fallback kit for body-system starts. It provides food and crop variety, but no kitchen workstation, knife, crate, pouch, or storage bypass.",
+    "items": [
+      {
+        "item": "sereneseasons:calendar",
+        "count": 1,
+        "slot": "weapon.offhand"
+      },
+      {
+        "item": "farmersdelight:cabbage_seeds",
+        "count": 16,
+        "slot": "inventory"
+      },
+      {
+        "item": "farmersdelight:tomato_seeds",
+        "count": 16,
+        "slot": "inventory"
+      },
+      {
+        "item": "farmersdelight:rice_panicle",
+        "count": 16,
+        "slot": "inventory"
+      },
+      {
+        "item": "minecraft:potato",
+        "count": 16,
+        "slot": "inventory"
+      },
+      {
+        "item": "minecraft:apple",
+        "count": 8,
+        "slot": "inventory"
+      },
+      {
+        "item": "cold_sweat:filled_waterskin",
+        "count": 1,
+        "slot": "inventory"
+      },
+      {
+        "item": "thirst:terracotta_bowl",
+        "count": 1,
+        "slot": "inventory"
+      }
+    ]
+  },
+  {
+    "id": "rail_scout",
+    "title": "Rail Scout",
+    "blurb": "Manual physical-route starter",
+    "description": "Safe fallback kit for local logistics starts. It gives unpowered rails and a minecart, not powered rails, Create trains, stations, packages, or production.",
+    "items": [
+      {
+        "item": "minecraft:rail",
         "count": 32,
         "slot": "inventory"
       },
@@ -230,332 +102,116 @@
         "slot": "inventory"
       },
       {
-        "item": "minecraft:chest_minecart",
+        "item": "minecraft:compass",
         "count": 1,
-        "slot": "inventory"
+        "slot": "weapon.offhand"
       },
       {
-        "item": "create:minecart_coupling",
+        "item": "minecraft:torch",
         "count": 16,
         "slot": "inventory"
       },
       {
-        "item": "rehooked:wood_hook",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "sophisticatedbackpacks:backpack",
+        "item": "thirst:terracotta_bowl",
         "count": 1,
         "slot": "inventory"
       }
     ]
   },
   {
-    "id": "cook",
-    "title": "Cook",
-    "blurb": "Meal production and kitchen setup",
-    "description": "Starts with cooking tools, kitchen blocks, seeds, and basic utility gear. Best for players who want to prepare meals, improve food quality, and support the group with better nutrition.",
+    "id": "flood_runner",
+    "title": "Flood Runner",
+    "blurb": "Water-route survival",
+    "description": "Safe fallback kit for rivers, coasts, and flooded caves. It starts hydration and route consumables only, with no armor, Create equipment, mining tool, or extraction shortcut.",
     "items": [
       {
-        "item": "additionalweaponry:butcher_knife{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:bone\"],tic_modifiers:[{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:pierce\"},{level:1,name:\"tconstruct:severing\"},{level:1,name:\"tconstruct:dwarven\"},{level:1,name:\"tconstruct:silky_shears\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":3.4875f,\"tconstruct:attack_speed\":1.15f,\"tconstruct:durability\":263.5f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":3.375f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "weapon.offhand"
+        "item": "minecraft:dried_kelp",
+        "count": 12,
+        "slot": "inventory"
       },
       {
-        "item": "tconstruct:hand_axe{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:leather\"],tic_modifiers:[{level:1,name:\"tconstruct:tanned\"},{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:stripping\"},{level:1,name:\"tconstruct:dwarven\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":6.5f,\"tconstruct:attack_speed\":0.9f,\"tconstruct:durability\":210.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
+        "item": "minecraft:torch",
+        "count": 12,
+        "slot": "inventory"
+      },
+      {
+        "item": "cold_sweat:filled_waterskin",
         "count": 1,
         "slot": "inventory"
       },
       {
-        "item": "tconstruct:pickaxe{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:leather\"],tic_modifiers:[{level:1,name:\"tconstruct:tanned\"},{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:pierce\"},{level:1,name:\"tconstruct:dwarven\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":1.5f,\"tconstruct:attack_speed\":1.2f,\"tconstruct:durability\":210.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
+        "item": "farmersdelight:rope",
+        "count": 12,
         "slot": "inventory"
       },
       {
-        "item": "farmersdelight:cooking_pot",
+        "item": "thirst:terracotta_bowl",
         "count": 1,
+        "slot": "inventory"
+      }
+    ]
+  },
+  {
+    "id": "market_runner",
+    "title": "Market Runner",
+    "blurb": "Small trade float and travel supplies",
+    "description": "Safe fallback kit for village and wares recovery play. It gives a bounded low-tier trade float and travel support without Wares items or production materials.",
+    "items": [
+      {
+        "item": "createdeco:copper_coin",
+        "count": 16,
         "slot": "inventory"
       },
       {
-        "item": "minecraft:campfire",
+        "item": "createdeco:zinc_coin",
         "count": 2,
         "slot": "inventory"
       },
       {
-        "item": "farmersdelight:tomato_seeds",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "veggiesdelight:bellpepper_seeds",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "veggiesdelight:broccoli_seeds",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "veggiesdelight:cauliflower_seeds",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "rehooked:wood_hook",
+        "item": "minecraft:compass",
         "count": 1,
-        "slot": "inventory"
+        "slot": "weapon.offhand"
       },
       {
-        "item": "sophisticatedbackpacks:backpack",
-        "count": 1,
-        "slot": "inventory"
-      }
-    ]
-  },
-  {
-    "id": "brewer",
-    "title": "Brewer",
-    "blurb": "Drink production and ingredient farming",
-    "description": "Starts with brewing equipment, drink ingredients, seeds, and light combat tools. Best for players who want to produce beverages, grow brewing inputs, and supply useful consumables.",
-    "items": [
-      {
-        "item": "tconstruct:throwing_axe{tic_materials:[\"tconstruct:quartz\",\"tconstruct:wood\"],tic_modifiers:[{level:1,name:\"tconstruct:keen\"},{level:1,name:\"tconstruct:economical\"}],tic_multipliers:{\"tconstruct:projectile_damage\":3.0f},tic_persistent:{},tic_stats:{\"tconstruct:accuracy\":0.5f,\"tconstruct:projectile_damage\":6.0f,\"tconstruct:velocity\":0.75f,\"tconstruct:water_inertia\":0.5f}}",
-        "count": 16,
-        "slot": "hotbar.0"
-      },
-      {
-        "item": "brewinandchewin:beer",
+        "item": "minecraft:apple",
         "count": 8,
-        "slot": "weapon.offhand"
-      },
-      {
-        "item": "additionalweaponry:butcher_knife{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:copper\"],tic_modifiers:[{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:severing\"},{level:2,name:\"tconstruct:dwarven\"},{level:1,name:\"tconstruct:silky_shears\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":2.5f,\"tconstruct:attack_speed\":1.15f,\"tconstruct:durability\":335.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
         "slot": "inventory"
       },
       {
-        "item": "tconstruct:throwing_axe{tic_materials:[\"tconstruct:quartz\",\"tconstruct:wood\"],tic_modifiers:[{level:1,name:\"tconstruct:keen\"},{level:1,name:\"tconstruct:economical\"}],tic_multipliers:{\"tconstruct:projectile_damage\":3.0f},tic_persistent:{},tic_stats:{\"tconstruct:accuracy\":0.5f,\"tconstruct:projectile_damage\":6.0f,\"tconstruct:velocity\":0.75f,\"tconstruct:water_inertia\":0.5f}}",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "tconstruct:mattock{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:copper\"],tic_modifiers:[{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:tilling\"},{level:2,name:\"tconstruct:dwarven\"}],tic_multipliers:{\"tconstruct:attack_damage\":1.1f,\"tconstruct:durability\":1.25f,\"tconstruct:mining_speed\":1.1f},tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":2.2f,\"tconstruct:attack_speed\":0.9f,\"tconstruct:durability\":262.5f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.5f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "brewinandchewin:keg",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "farmersrespite:kettle",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "minecraft:sugar_cane",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "dynamictrees:apple_oak_seed",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "farmersrespite:tea_seeds",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "minecraft:wheat",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "minecraft:brown_mushroom",
-        "count": 16,
-        "slot": "inventory"
-      },
-      {
-        "item": "rehooked:wood_hook",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "sophisticatedbackpacks:backpack",
+        "item": "thirst:terracotta_bowl",
         "count": 1,
         "slot": "inventory"
       }
     ]
   },
   {
-    "id": "machinist",
-    "title": "Machinist",
-    "blurb": "Early automation and Create setup",
-    "description": "Starts with Create equipment, storage components, and a versatile tool. Best for players who want to establish mechanical processing and early automation as soon as possible.",
+    "id": "trail_wrangler",
+    "title": "Trail Wrangler",
+    "blurb": "Mount, animal, and camp-route support",
+    "description": "Safe fallback kit for animal and settlement routing. It gives route support and travel food without TNT inputs, tools, logs, storage, or automation.",
     "items": [
       {
-        "item": "create:wrench",
-        "count": 1,
-        "slot": "hotbar.0"
-      },
-      {
-        "item": "create:large_water_wheel",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "create:millstone",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "create:andesite_alloy",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "sophisticatedstorage:barrel",
-        "count": 4,
-        "slot": "inventory"
-      },
-      {
-        "item": "sophisticatedstorage:hopper_upgrade",
-        "count": 4,
-        "slot": "inventory"
-      },
-      {
-        "item": "tinkers_thinking:paxel{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:copper\"],tic_modifiers:[{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:killager\"},{level:1,name:\"tconstruct:stripping\"},{level:2,name:\"tconstruct:dwarven\"}],tic_multipliers:{\"tconstruct:durability\":1.25f,\"tconstruct:mining_speed\":0.8f},tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":5.0f,\"tconstruct:attack_speed\":1.1f,\"tconstruct:durability\":262.5f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":4.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "create:goggles",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "rehooked:wood_hook",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "sophisticatedbackpacks:backpack",
-        "count": 1,
-        "slot": "inventory"
-      }
-    ]
-  },
-  {
-    "id": "explorer",
-    "title": "Explorer",
-    "blurb": "Scouting, mapping, and animal transport",
-    "description": "Starts with travel gear, maps, leads, and utility tools for exploration and collection. Best for players who want to find structures, chart the world, and bring back useful animals or discoveries.",
-    "items": [
-      {
-        "item": "tconstruct:pickadze{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:copper\"],tic_modifiers:[{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:pathing\"},{level:2,name:\"tconstruct:dwarven\"}],tic_multipliers:{\"tconstruct:attack_damage\":1.15f,\"tconstruct:durability\":1.3f,\"tconstruct:mining_speed\":0.75f},tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":1.15f,\"tconstruct:attack_speed\":1.3f,\"tconstruct:durability\":273.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":3.75f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "hotbar.0"
-      },
-      {
-        "item": "minecraft:spyglass",
-        "count": 1,
-        "slot": "weapon.offhand"
-      },
-      {
-        "item": "additionalweaponry:butcher_knife{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:copper\"],tic_modifiers:[{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:severing\"},{level:2,name:\"tconstruct:dwarven\"},{level:1,name:\"tconstruct:silky_shears\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":2.5f,\"tconstruct:attack_speed\":1.15f,\"tconstruct:durability\":335.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "tconstruct:sword{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:wood\"],tic_modifiers:[{level:2,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:dwarven\"},{level:1,name:\"tconstruct:silky_shears\"}],tic_multipliers:{\"tconstruct:durability\":1.1f,\"tconstruct:mining_speed\":0.5f},tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":3.5f,\"tconstruct:attack_speed\":1.6f,\"tconstruct:block_amount\":10.0f,\"tconstruct:durability\":231.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":2.5f},tic_volatile_data:{abilities:1,upgrades:3}}",
+        "item": "minecraft:saddle",
         "count": 1,
         "slot": "inventory"
       },
       {
         "item": "minecraft:lead",
-        "count": 32,
+        "count": 2,
         "slot": "inventory"
       },
       {
-        "item": "minecraft:dark_oak_boat",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "farmersdelight:horse_feed",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "betterarcheology:iron_brush",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "minecraft:map",
+        "item": "minecraft:candle",
         "count": 8,
         "slot": "inventory"
       },
       {
-        "item": "tconstruct:shuriken{tic_materials:[\"tconstruct:ender_pearl\",\"tconstruct:ender_pearl\"],tic_modifiers:[{level:2,name:\"tconstruct:enderporting\"}],tic_multipliers:{\"tconstruct:projectile_damage\":2.0f},tic_persistent:{},tic_stats:{\"tconstruct:projectile_damage\":3.0f,\"tconstruct:velocity\":1.5f,\"tconstruct:water_inertia\":0.8f}}",
-        "count": 16,
+        "item": "minecraft:carrot",
+        "count": 12,
         "slot": "inventory"
       },
       {
-        "item": "rehooked:wood_hook",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "sophisticatedbackpacks:backpack",
-        "count": 1,
-        "slot": "inventory"
-      }
-    ]
-  },
-  {
-    "id": "fisher",
-    "title": "Fisher",
-    "blurb": "Fishing rewards and steady resource gathering",
-    "description": "Starts with fishing gear, bait, and basic utility tools. Best for players who want to focus on fishing-based progression and gather rewards through the fishing system.",
-    "items": [
-      {
-        "item": "starcatcher:starcatcher_rod",
-        "count": 1,
-        "slot": "hotbar.0"
-      },
-      {
-        "item": "tconstruct:pickadze{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:copper\"],tic_modifiers:[{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:pathing\"},{level:2,name:\"tconstruct:dwarven\"}],tic_multipliers:{\"tconstruct:attack_damage\":1.15f,\"tconstruct:durability\":1.3f,\"tconstruct:mining_speed\":0.75f},tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":1.15f,\"tconstruct:attack_speed\":1.3f,\"tconstruct:durability\":273.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":3.75f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "additionalweaponry:butcher_knife{Damage:0,tic_broken:0b,tic_materials:[\"tconstruct:copper\",\"tconstruct:wood\",\"tconstruct:copper\"],tic_modifiers:[{level:1,name:\"tconstruct:cultivated\"},{level:1,name:\"tconstruct:severing\"},{level:2,name:\"tconstruct:dwarven\"},{level:1,name:\"tconstruct:silky_shears\"}],tic_persistent:{},tic_stats:{\"tconstruct:attack_damage\":2.5f,\"tconstruct:attack_speed\":1.15f,\"tconstruct:durability\":335.0f,\"tconstruct:harvest_tier\":\"minecraft:iron\",\"tconstruct:mining_speed\":5.0f},tic_volatile_data:{abilities:1,upgrades:3}}",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "starcatcher:starcatcher_guide",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "starcatcher:worm",
-        "count": 64,
-        "slot": "inventory"
-      },
-      {
-        "item": "rehooked:wood_hook",
-        "count": 1,
-        "slot": "inventory"
-      },
-      {
-        "item": "sophisticatedbackpacks:backpack",
+        "item": "thirst:terracotta_bowl",
         "count": 1,
         "slot": "inventory"
       }

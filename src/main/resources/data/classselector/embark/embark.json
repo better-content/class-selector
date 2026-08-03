@@ -1,5 +1,5 @@
 {
-  "mode": "embark_points",
+  "mode": "none",
   "pointQuota": 18,
   "items": [
     {
@@ -25,6 +25,17 @@
       "slot": "inventory"
     },
     {
+      "id": "thermometer",
+      "title": "Thermometer",
+      "category": "Climate",
+      "blurb": "A thin warning in your palm.",
+      "item": "cold_sweat:thermometer",
+      "count": 1,
+      "cost": 2,
+      "maxPurchases": 1,
+      "slot": "weapon.offhand"
+    },
+    {
       "id": "torch_bundle",
       "title": "Torch Bundle",
       "category": "Camp",
@@ -33,50 +44,6 @@
       "count": 12,
       "cost": 1,
       "maxPurchases": 3,
-      "slot": "inventory"
-    },
-    {
-      "id": "candle_bundle",
-      "title": "Candle Bundle",
-      "category": "Camp",
-      "blurb": "Small lights for still rooms.",
-      "item": "minecraft:candle",
-      "count": 8,
-      "cost": 1,
-      "maxPurchases": 2,
-      "slot": "inventory"
-    },
-    {
-      "id": "lantern",
-      "title": "Lantern",
-      "category": "Camp",
-      "blurb": "A steady light in bad weather.",
-      "item": "minecraft:lantern",
-      "count": 1,
-      "cost": 2,
-      "maxPurchases": 1,
-      "slot": "weapon.offhand"
-    },
-    {
-      "id": "campfire",
-      "title": "Campfire",
-      "category": "Camp",
-      "blurb": "Smoke, warmth, and a place to stop.",
-      "item": "minecraft:campfire",
-      "count": 1,
-      "cost": 2,
-      "maxPurchases": 1,
-      "slot": "inventory"
-    },
-    {
-      "id": "charcoal",
-      "title": "Charcoal",
-      "category": "Camp",
-      "blurb": "Black fuel from an old fire.",
-      "item": "minecraft:charcoal",
-      "count": 6,
-      "cost": 1,
-      "maxPurchases": 2,
       "slot": "inventory"
     },
     {
@@ -124,56 +91,12 @@
       "slot": "inventory"
     },
     {
-      "id": "paper_pack",
-      "title": "Paper Pack",
-      "category": "Route",
-      "blurb": "Dry sheets for marks and bargains.",
-      "item": "minecraft:paper",
-      "count": 12,
-      "cost": 1,
-      "maxPurchases": 2,
-      "slot": "inventory"
-    },
-    {
-      "id": "spyglass",
-      "title": "Spyglass",
-      "category": "Route",
-      "blurb": "Far ridges pulled close.",
-      "item": "minecraft:spyglass",
-      "count": 1,
-      "cost": 4,
-      "maxPurchases": 1,
-      "slot": "weapon.offhand"
-    },
-    {
-      "id": "natures_compass",
-      "title": "Nature's Compass",
-      "category": "Route",
-      "blurb": "A whisper toward familiar ground.",
-      "item": "naturescompass:naturescompass",
-      "count": 1,
-      "cost": 7,
-      "maxPurchases": 1,
-      "slot": "weapon.offhand"
-    },
-    {
       "id": "rail_bundle",
       "title": "Rail Bundle",
       "category": "Route",
       "blurb": "Iron lines for a stubborn road.",
       "item": "minecraft:rail",
       "count": 16,
-      "cost": 2,
-      "maxPurchases": 2,
-      "slot": "inventory"
-    },
-    {
-      "id": "powered_rail_bundle",
-      "title": "Powered Rail Bundle",
-      "category": "Route",
-      "blurb": "A short push through the dark.",
-      "item": "minecraft:powered_rail",
-      "count": 4,
       "cost": 2,
       "maxPurchases": 2,
       "slot": "inventory"
@@ -187,83 +110,6 @@
       "count": 1,
       "cost": 2,
       "maxPurchases": 1,
-      "slot": "inventory"
-    },
-    {
-      "id": "lead_pair",
-      "title": "Lead Pair",
-      "category": "Route",
-      "blurb": "Knotted cord for nervous animals.",
-      "item": "minecraft:lead",
-      "count": 2,
-      "cost": 1,
-      "maxPurchases": 2,
-      "slot": "inventory"
-    },
-    {
-      "id": "saddle",
-      "title": "Saddle",
-      "category": "Route",
-      "blurb": "Leather for a borrowed mount.",
-      "item": "minecraft:saddle",
-      "count": 1,
-      "cost": 5,
-      "maxPurchases": 1,
-      "slot": "inventory"
-    },
-    {
-      "id": "season_calendar",
-      "title": "Season Calendar",
-      "category": "Food",
-      "blurb": "A farmer's count of turning days.",
-      "item": "sereneseasons:calendar",
-      "count": 1,
-      "cost": 1,
-      "maxPurchases": 1,
-      "slot": "weapon.offhand"
-    },
-    {
-      "id": "wheat_seeds",
-      "title": "Wheat Seeds",
-      "category": "Food",
-      "blurb": "A field waiting in your palm.",
-      "item": "minecraft:wheat_seeds",
-      "count": 12,
-      "cost": 1,
-      "maxPurchases": 2,
-      "slot": "inventory"
-    },
-    {
-      "id": "beetroot_seeds",
-      "title": "Beetroot Seeds",
-      "category": "Food",
-      "blurb": "Red roots for lean soil.",
-      "item": "minecraft:beetroot_seeds",
-      "count": 12,
-      "cost": 1,
-      "maxPurchases": 2,
-      "slot": "inventory"
-    },
-    {
-      "id": "melon_seeds",
-      "title": "Melon Seeds",
-      "category": "Food",
-      "blurb": "Sweet water in a future rind.",
-      "item": "minecraft:melon_seeds",
-      "count": 4,
-      "cost": 2,
-      "maxPurchases": 1,
-      "slot": "inventory"
-    },
-    {
-      "id": "bonemeal_pouch",
-      "title": "Bonemeal Pouch",
-      "category": "Food",
-      "blurb": "White dust for hungry sprouts.",
-      "item": "minecraft:bone_meal",
-      "count": 8,
-      "cost": 1,
-      "maxPurchases": 2,
       "slot": "inventory"
     },
     {
@@ -285,72 +131,6 @@
       "item": "minecraft:bread",
       "count": 6,
       "cost": 2,
-      "maxPurchases": 2,
-      "slot": "inventory"
-    },
-    {
-      "id": "dried_kelp",
-      "title": "Dried Kelp",
-      "category": "Food",
-      "blurb": "Salted green strips for travel.",
-      "item": "minecraft:dried_kelp",
-      "count": 16,
-      "cost": 1,
-      "maxPurchases": 2,
-      "slot": "inventory"
-    },
-    {
-      "id": "vodka_stock",
-      "title": "Vodka Stock",
-      "category": "Drink",
-      "blurb": "Sharp heat in a glass bottle.",
-      "item": "brewinandchewin:vodka",
-      "count": 2,
-      "cost": 2,
-      "maxPurchases": 1,
-      "slot": "inventory"
-    },
-    {
-      "id": "string_bundle",
-      "title": "String Bundle",
-      "category": "Craft",
-      "blurb": "Loose thread for field repairs.",
-      "item": "minecraft:string",
-      "count": 8,
-      "cost": 1,
-      "maxPurchases": 2,
-      "slot": "inventory"
-    },
-    {
-      "id": "flint_shards",
-      "title": "Flint Shards",
-      "category": "Craft",
-      "blurb": "Sharp stone from a riverbank.",
-      "item": "minecraft:flint",
-      "count": 4,
-      "cost": 1,
-      "maxPurchases": 2,
-      "slot": "inventory"
-    },
-    {
-      "id": "leather_scraps",
-      "title": "Leather Scraps",
-      "category": "Craft",
-      "blurb": "Worn hide saved from old tack.",
-      "item": "minecraft:leather",
-      "count": 4,
-      "cost": 2,
-      "maxPurchases": 1,
-      "slot": "inventory"
-    },
-    {
-      "id": "clay_lumps",
-      "title": "Clay Lumps",
-      "category": "Craft",
-      "blurb": "Damp earth for crude work.",
-      "item": "minecraft:clay_ball",
-      "count": 12,
-      "cost": 1,
       "maxPurchases": 2,
       "slot": "inventory"
     }

@@ -2,10 +2,23 @@ package com.example.classselector.embark
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class EmbarkConfigRepositoryTest {
+    @Test
+    fun bundledFallbackDisablesSelectionAndContainsNoTechBypass() {
+        val json = EmbarkConfigRepository::class.java
+            .getResourceAsStream("/data/classselector/embark/embark.json")!!
+            .bufferedReader().use { it.readText() }
+        val settings = EmbarkConfigRepository.validate(EmbarkConfigRepository.parse(json))
+
+        assertEquals(SelectionMode.NONE, settings.mode)
+        assertFalse(settings.items.any { it.item.startsWith("create:") || it.item.startsWith("tconstruct:") })
+        assertFalse(settings.items.any { it.item == "minecraft:powered_rail" || it.item == "minecraft:recovery_compass" })
+    }
+
     @Test
     fun parsesAndValidatesEmbarkConfig() {
         val json = """

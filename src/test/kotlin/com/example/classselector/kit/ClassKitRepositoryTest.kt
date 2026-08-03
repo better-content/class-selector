@@ -2,10 +2,27 @@ package com.example.classselector.kit
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class ClassKitRepositoryTest {
+    @Test
+    fun bundledFallbackKitsContainNoProgressionBypasses() {
+        val json = ClassKitRepository::class.java
+            .getResourceAsStream("/data/classselector/class_kits/kits.json")!!
+            .bufferedReader().use { it.readText() }
+        val kits = ClassKitRepository.validate(ClassKitRepository.parse(json))
+        val itemSpecs = kits.flatMap { kit -> kit.items.map { it.item } }
+
+        assertEquals(6, kits.size)
+        assertFalse(itemSpecs.any { '{' in it }, "fallback kits must not ship authored tool NBT")
+        assertFalse(itemSpecs.any { it.startsWith("create:") }, "fallback kits must not bypass Create progression")
+        assertFalse(itemSpecs.any { it.startsWith("tconstruct:") }, "fallback kits must not bypass TCon metallurgy")
+        assertFalse(itemSpecs.any { it == "minecraft:powered_rail" || it == "minecraft:recovery_compass" })
+        assertFalse(itemSpecs.any { it.startsWith("sophisticatedbackpacks:") || it == "minecraft:tnt" })
+    }
+
     @Test
     fun parsesClassKitsFromJson() {
         val json = """
