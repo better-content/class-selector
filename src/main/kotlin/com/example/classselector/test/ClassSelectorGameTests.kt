@@ -19,33 +19,23 @@ object ClassSelectorGameTests {
     @GameTest(template = "empty")
     fun kitsShouldLoad(helper: GameTestHelper) {
         val kits = ClassKitRepository.load()
-        if (kits.size != 9) {
-            throw GameTestAssertException("Expected 9 default class kits, found ${kits.size}")
-        }
-
         val expectedIds = setOf(
-            "miner",
-            "lumberjack",
-            "farmer",
-            "rail_engineer",
-            "cook",
-            "brewer",
-            "machinist",
-            "explorer",
-            "fisher"
+            "wayfinder",
+            "field_cook",
+            "rail_scout",
+            "flood_runner",
+            "market_runner",
+            "trail_wrangler"
         )
         val actualIds = kits.map { it.id }.toSet()
         if (actualIds != expectedIds) {
             throw GameTestAssertException("Expected ids $expectedIds, found $actualIds")
         }
 
-        val miner = kits.firstOrNull { it.id == "miner" }
-            ?: throw GameTestAssertException("Expected miner kit to exist")
-        if (miner.items.firstOrNull()?.slot != "hotbar.0") {
-            throw GameTestAssertException("Expected miner first item to target hotbar.0")
-        }
-        if (miner.items.getOrNull(1)?.slot != "weapon.offhand") {
-            throw GameTestAssertException("Expected miner second item to target weapon.offhand")
+        val wayfinder = kits.firstOrNull { it.id == "wayfinder" }
+            ?: throw GameTestAssertException("Expected wayfinder kit to exist")
+        if (wayfinder.items.firstOrNull()?.slot != "weapon.offhand") {
+            throw GameTestAssertException("Expected wayfinder compass to target weapon.offhand")
         }
 
         kits.forEach { kit ->
