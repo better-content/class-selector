@@ -41,7 +41,6 @@ object PersonalRespawnEvents {
         // Bed and respawn-anchor style updates are non-forced; keep the class-locked respawn authoritative.
         if (!event.isForced && event.newSpawn != null) {
             event.isCanceled = true
-            player.sendSystemMessage(Component.literal("Bed respawn changes are disabled while class spawn is locked."))
         }
     }
 

@@ -1,20 +1,49 @@
 package com.bettercontent.classselector.test
 
 import com.bettercontent.classselector.ClassSelectorMod
+import com.bettercontent.classselector.integration.OnboardingIntegration
+import com.bettercontent.classselector.integration.PlayerStartFinalizedEvent
 import com.bettercontent.classselector.kit.ClassKitRepository
 import com.bettercontent.classselector.kit.KitItemStackFactory
 import com.bettercontent.classselector.kit.KitSlot
 import com.bettercontent.classselector.respawn.PersonalRespawnPoint
 import com.bettercontent.classselector.respawn.PersonalRespawnService
+import com.mojang.authlib.GameProfile
 import net.minecraft.core.BlockPos
 import net.minecraft.gametest.framework.GameTest
 import net.minecraft.gametest.framework.GameTestAssertException
 import net.minecraft.gametest.framework.GameTestHelper
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.block.Blocks
+import net.minecraftforge.common.MinecraftForge
+import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.gametest.GameTestHolder
+import java.util.UUID
 
 @GameTestHolder(ClassSelectorMod.MOD_ID)
 object ClassSelectorGameTests {
+    private fun testPlayer(helper: GameTestHelper): ServerPlayer = ServerPlayer(
+        helper.level.server,
+        helper.level,
+        GameProfile(UUID.randomUUID(), "class-selector-test")
+    )
+
+    private class FinalizationProbe {
+        var count: Int = 0
+        var completedAtEvent: Boolean = false
+        var kitIdAtEvent: String? = null
+        var spawnIdAtEvent: String? = null
+
+        @SubscribeEvent
+        fun onFinalized(event: PlayerStartFinalizedEvent) {
+            val player = event.entity as ServerPlayer
+            count++
+            completedAtEvent = OnboardingIntegration.hasCompletedOnboarding(player)
+            kitIdAtEvent = OnboardingIntegration.getStartingKit(player)
+            spawnIdAtEvent = OnboardingIntegration.getStartingSite(player)
+        }
+    }
+
     @JvmStatic
     @GameTest(template = "empty")
     fun kitsShouldLoad(helper: GameTestHelper) {
@@ -193,6 +222,68 @@ object ClassSelectorGameTests {
         helper.assertBlockPresent(Blocks.AIR, requestedFeetPos)
         helper.assertBlockPresent(Blocks.AIR, requestedFeetPos.above())
 
+        helper.succeed()
+    }
+
+    @JvmStatic
+    @GameTest(template = "empty")
+    fun finalizationPublishesCommittedPlayerStartOnce(helper: GameTestHelper) {
+        val player = testPlayer(helper)
+        val spawnId = "${helper.level.dimension().location()}@10,64,-5"
+        val probe = FinalizationProbe()
+        MinecraftForge.EVENT_BUS.register(probe)
+
+        try {
+            helper.assertTrue(
+                OnboardingIntegration.finalizeOnboarding(player, "spawn_only", spawnId),
+                "Expected the first finalization attempt to commit"
+            )
+            helper.assertFalse(
+                OnboardingIntegration.finalizeOnboarding(player, "replacement", "minecraft:overworld@0,0,0"),
+                "Expected repeated finalization to be ignored"
+            )
+            helper.assertTrue(probe.count == 1, "Expected exactly one PlayerStartFinalizedEvent, found ${probe.count}")
+            helper.assertTrue(probe.completedAtEvent, "Expected onboarding to be committed before the event is published")
+            helper.assertTrue(probe.kitIdAtEvent == "spawn_only", "Expected committed kit data to be visible to event listeners")
+            helper.assertTrue(probe.spawnIdAtEvent == spawnId, "Expected committed spawn data to be visible to event listeners")
+        } finally {
+            MinecraftForge.EVENT_BUS.unregister(probe)
+        }
+
+        helper.succeed()
+    }
+
+    @JvmStatic
+    @GameTest(template = "empty")
+    fun bedSpawnCannotReplacePermanentStartingSpawn(helper: GameTestHelper) {
+        val player = testPlayer(helper)
+        val lockedRelative = BlockPos(1, 1, 1)
+        helper.setBlock(lockedRelative.below(), Blocks.CRYING_OBSIDIAN)
+        helper.setBlock(lockedRelative, Blocks.AIR)
+        helper.setBlock(lockedRelative.above(), Blocks.AIR)
+
+        val lockedAbsolute = helper.absolutePos(lockedRelative)
+        val lockedPoint = PersonalRespawnPoint(
+            dim = helper.level.dimension().location().toString(),
+            x = lockedAbsolute.x,
+            y = lockedAbsolute.y,
+            z = lockedAbsolute.z
+        )
+        PersonalRespawnService.setRespawnPoint(player, lockedPoint)
+        OnboardingIntegration.finalizeOnboarding(player, "spawn_only", OnboardingIntegration.buildSpawnId(lockedPoint))
+
+        val attemptedBedSpawn = helper.absolutePos(BlockPos(3, 1, 3))
+        player.setRespawnPosition(helper.level.dimension(), attemptedBedSpawn, 0.0f, false, false)
+
+        helper.assertTrue(
+            PersonalRespawnService.getRespawnPoint(player) == lockedPoint,
+            "Expected the permanent starting spawn to remain stored after using a bed"
+        )
+        helper.assertTrue(
+            player.respawnPosition == lockedAbsolute,
+            "Expected the vanilla respawn mirror to remain at the permanent starting spawn"
+        )
+        helper.assertTrue(player.isRespawnForced, "Expected the permanent starting spawn to remain forced")
         helper.succeed()
     }
 }
