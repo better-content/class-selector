@@ -6,8 +6,8 @@ license="AGPL-3.0-or-later"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-displayURL="https://github.com/geraldsummers/classselector"
-issueTrackerURL="https://github.com/geraldsummers/classselector/issues"
+displayURL="https://github.com/geraldsummers/class_selector"
+issueTrackerURL="https://github.com/geraldsummers/class_selector/issues"
 authors="Gerald Summers"
 description='''
 Class selection mod with JSON-defined starter kits, spectator gating for new players, and per-player permanent respawn selection.

@@ -14,11 +14,11 @@ plugins {
     id("org.parchmentmc.librarian.forgegradle") version "1.2.0"
 }
 
-group = property("mod_group_id") as String
+group = "com.bettercontent"
 version = property("mod_version") as String
 
 base {
-    archivesName.set(property("mod_id") as String)
+    archivesName.set(property("artifact_name") as String)
 }
 
 java {

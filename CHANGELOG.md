@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+
+- Standardized the repository, artifact, package, and mod namespace under the canonical Better Content identity; this is a clean break without legacy aliases or migration.
 - Replaced server-wide respawn hub voting with per-player permanent respawn selection at class pick time.
 
 ## 1.0.0 - 2026-04-07

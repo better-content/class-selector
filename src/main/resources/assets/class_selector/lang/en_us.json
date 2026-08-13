@@ -1,0 +1,8 @@
+{
+  "key.class_selector.open_menu": "Open Class Selector",
+  "key.categories.class_selector": "Class Selector",
+  "message.class_selector.lock_in_prompt": "Press %s to lock a class, lock a respawn point, then begin.",
+  "message.class_selector.lock_in_reminder": "Press %s to finish locking your class and respawn point.",
+  "message.class_selector.spawn_only_prompt": "Press %s to set your starting spawn and begin.",
+  "message.class_selector.spawn_only_reminder": "Press %s to set your starting spawn and begin."
+}

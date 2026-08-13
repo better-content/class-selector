@@ -5,13 +5,13 @@ A Forge mod that forces new players to pick a class before starting:
 - Client is prompted to open class menu with `K`.
 - Class menu shows title, blurb, and description.
 - Players lock a class and lock a respawn point separately, then press `Begin`.
-- Kits are JSON-defined in `config/classselector/kits.json`.
-- Alternatively, `config/classselector/embark.json` can switch onboarding to an embark-style point-buy item pool.
+- Kits are JSON-defined in `config/class_selector/kits.json`.
+- Alternatively, `config/class_selector/embark.json` can switch onboarding to an embark-style point-buy item pool.
 - Respawning returns the player to that saved starting location with the scripted sound and particle FX.
 
 ## Admin commands
 
-- `/classselector resetrespawn <targets>` clears stored permanent respawn points for online players.
+- `/class_selector resetrespawn <targets>` clears stored permanent respawn points for online players.
 
 ## Kit slot targeting
 
@@ -25,7 +25,7 @@ If a requested slot is missing or full, the item falls back to player inventory.
 
 ## Embark point-buy mode
 
-`config/classselector/embark.json` controls the selection mode:
+`config/class_selector/embark.json` controls the selection mode:
 - `"mode": "class"` keeps the existing fixed class selector.
 - `"mode": "embark_points"` replaces classes with a point-buy supply screen.
 - `"pointQuota"` sets how many points each player can spend.
@@ -48,14 +48,14 @@ Curios is required and loaded as a Forge dependency.
 
 ## Release install
 
-Use the jar produced at `build/libs/classselector-<version>.jar`.
+Use the jar produced at `build/libs/class-selector-<version>.jar`.
 
 - Server: install Class Selector, Kotlin for Forge, and Curios in the server `mods/` folder.
 - Client: install the same mod set and matching Forge `47.4.x` on Minecraft `1.20.1`.
 
 Project URLs:
-- Repository: `https://github.com/geraldsummers/classselector`
-- Issue tracker: `https://github.com/geraldsummers/classselector/issues`
+- Repository: `https://github.com/geraldsummers/class_selector`
+- Issue tracker: `https://github.com/geraldsummers/class_selector/issues`
 
 ## Test commands
 
@@ -79,3 +79,12 @@ JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH
 ## Community and support
 
 For modpack and mod discussion, playtest feedback, and bug reports, join the [Better Content Discord](https://discord.gg/EkRnZbzqS9).
+
+## Canonical identity
+
+- Repository and Gradle project: `class-selector`
+- Mod ID and resource namespace: `class_selector`
+- Maven group: `com.bettercontent`
+- Runtime artifact: `build/libs/class-selector-<version>.jar`
+
+The canonical identity is a clean break. Legacy mod IDs, resource namespaces, configuration paths, commands, network channels, and saved-data keys are not migrated or aliased.

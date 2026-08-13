@@ -1,0 +1,91 @@
+package com.bettercontent.classselector.respawn
+
+import com.bettercontent.classselector.ClassSelectorMod
+import com.bettercontent.classselector.ClassSelectorScope
+import com.bettercontent.classselector.integration.OnboardingIntegration
+import com.bettercontent.classselector.integration.OnboardingVisibilitySync
+import com.mojang.brigadier.Command
+import net.minecraft.commands.Commands
+import net.minecraft.commands.arguments.EntityArgument
+import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerPlayer
+import net.minecraftforge.event.RegisterCommandsEvent
+import net.minecraftforge.event.TickEvent
+import net.minecraftforge.event.entity.living.LivingDeathEvent
+import net.minecraftforge.event.entity.player.PlayerEvent
+import net.minecraftforge.event.entity.player.PlayerSetSpawnEvent
+import net.minecraftforge.eventbus.api.EventPriority
+import net.minecraftforge.eventbus.api.SubscribeEvent
+import net.minecraftforge.fml.common.Mod
+
+@Mod.EventBusSubscriber(modid = ClassSelectorMod.MOD_ID)
+object PersonalRespawnEvents {
+    @JvmStatic
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    fun onLivingDeath(event: LivingDeathEvent) {
+        val player = event.entity as? ServerPlayer ?: return
+        if (!ClassSelectorScope.isActiveIn(player.server)) return
+        if (!OnboardingIntegration.hasCompletedOnboarding(player) || !PersonalRespawnService.hasRespawnPoint(player)) return
+
+        PersonalRespawnService.refreshVanillaRespawnPosition(player)
+    }
+
+    @JvmStatic
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    fun onPlayerSetSpawn(event: PlayerSetSpawnEvent) {
+        val player = event.entity as? ServerPlayer ?: return
+        if (!ClassSelectorScope.isActiveIn(player.server)) return
+        if (!OnboardingIntegration.hasCompletedOnboarding(player)) return
+        if (!PersonalRespawnService.hasRespawnPoint(player)) return
+
+        // Bed and respawn-anchor style updates are non-forced; keep the class-locked respawn authoritative.
+        if (!event.isForced && event.newSpawn != null) {
+            event.isCanceled = true
+            player.sendSystemMessage(Component.literal("Bed respawn changes are disabled while class spawn is locked."))
+        }
+    }
+
+    @JvmStatic
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    fun onPlayerRespawn(event: PlayerEvent.PlayerRespawnEvent) {
+        val player = event.entity as? ServerPlayer ?: return
+        PersonalRespawnService.handleRespawn(player)
+    }
+
+    @JvmStatic
+    @SubscribeEvent
+    fun onServerTick(event: TickEvent.ServerTickEvent) {
+        if (event.phase != TickEvent.Phase.END) return
+        RespawnTaskScheduler.tick(event.server)
+        if (event.server.tickCount % 20 == 0) {
+            OnboardingVisibilitySync.sync(event.server)
+        }
+    }
+
+    @JvmStatic
+    @SubscribeEvent
+    fun onRegisterCommands(event: RegisterCommandsEvent) {
+        event.dispatcher.register(
+            Commands.literal("class_selector")
+                .requires { it.hasPermission(2) }
+                .then(
+                    Commands.literal("resetrespawn")
+                        .then(
+                            Commands.argument("targets", EntityArgument.players())
+                                .executes { ctx ->
+                                    val targets = EntityArgument.getPlayers(ctx, "targets")
+                                    targets.forEach { player ->
+                                        PersonalRespawnService.clearRespawnPoint(player)
+                                        PersonalRespawnService.sendRespawnResetMessage(player)
+                                    }
+                                    ctx.source.sendSuccess(
+                                        { Component.literal("Cleared permanent respawn for ${targets.size} player(s).") },
+                                        true
+                                    )
+                                    Command.SINGLE_SUCCESS
+                                }
+                        )
+                )
+        )
+    }
+}
