@@ -105,6 +105,7 @@ object ServerEvents {
         }
         PersonalRespawnService.copyRespawnPoint(original, cloned)
         OnboardingIntegration.copyPersistentState(original, cloned)
+        PersonalRespawnService.scheduleRespawnProtection(cloned)
     }
 
     @JvmStatic

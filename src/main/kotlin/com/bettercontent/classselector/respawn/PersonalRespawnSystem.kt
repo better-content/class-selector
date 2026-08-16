@@ -38,7 +38,9 @@ private const val SOUND_PITCH_EVOKER = 0.9
 private const val RESPAWN_SNAP_RADIUS = 16
 private const val RESPAWN_VERTICAL_WEIGHT = 3
 private const val RESPAWN_REPEL_RADIUS = 64.0
+private val RESPAWN_PROTECTION_DELAYS_TICKS = longArrayOf(1L, 3L, 7L)
 const val RESPAWN_PURGE_TAG = "class_selector:respawn_purge"
+private const val RESPAWN_PURGE_TAG_LEGACY = "classselector:respawn_purge"
 
 internal fun isInsideRespawnPurge(dx: Double, dy: Double, dz: Double): Boolean =
     dx * dx + dy * dy + dz * dz <= RESPAWN_REPEL_RADIUS * RESPAWN_REPEL_RADIUS
@@ -100,15 +102,25 @@ object PersonalRespawnService {
 
         player.setGameMode(GameType.SURVIVAL)
         teleportPlayerToRespawnPoint(player.server, player, point)
+        scheduleRespawnProtection(player.server, player.uuid)
         return true
     }
 
     fun handleRespawn(player: ServerPlayer) {
         if (!ClassSelectorScope.isActiveIn(player.server)) return
-        if (!OnboardingIntegration.hasCompletedOnboarding(player) || !hasRespawnPoint(player)) return
-        val point = getRespawnPoint(player) ?: return
+        if (!OnboardingIntegration.hasCompletedOnboarding(player)) return
 
-        teleportPlayerToRespawnPoint(player.server, player, point)
+        getRespawnPoint(player)?.let { point ->
+            teleportPlayerToRespawnPoint(player.server, player, point)
+        }
+
+        scheduleRespawnProtection(player.server, player.uuid)
+    }
+
+    fun scheduleRespawnProtection(player: ServerPlayer) {
+        if (!ClassSelectorScope.isActiveIn(player.server)) return
+        if (!OnboardingIntegration.hasCompletedOnboarding(player)) return
+
         scheduleRespawnProtection(player.server, player.uuid)
     }
 
@@ -282,9 +294,11 @@ object PersonalRespawnService {
     }
 
     private fun scheduleRespawnProtection(server: MinecraftServer, playerId: java.util.UUID) {
-        RespawnTaskScheduler.schedule(server, 1) { scheduledServer ->
-            val player = scheduledServer.playerList.getPlayer(playerId) ?: return@schedule
-            applyRespawnProtection(player)
+        RESPAWN_PROTECTION_DELAYS_TICKS.forEach { delay ->
+            RespawnTaskScheduler.schedule(server, delay) { scheduledServer ->
+                val player = scheduledServer.playerList.getPlayer(playerId) ?: return@schedule
+                applyRespawnProtection(player)
+            }
         }
     }
 
@@ -299,6 +313,7 @@ object PersonalRespawnService {
         }
         hostiles.forEach { hostile ->
             hostile.persistentData.putBoolean(RESPAWN_PURGE_TAG, true)
+            hostile.persistentData.putBoolean(RESPAWN_PURGE_TAG_LEGACY, true)
             hostile.discard()
         }
     }
