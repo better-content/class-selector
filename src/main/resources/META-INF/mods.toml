@@ -40,3 +40,10 @@ Class selection mod with JSON-defined starter kits, spectator gating for new pla
     versionRange="[${curios_version},)"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="world_lifecycle_manager"
+    mandatory=false
+    versionRange="[0.1.0,)"
+    ordering="AFTER"
+    side="BOTH"

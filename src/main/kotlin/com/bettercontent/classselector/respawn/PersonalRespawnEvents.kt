@@ -4,6 +4,10 @@ import com.bettercontent.classselector.ClassSelectorMod
 import com.bettercontent.classselector.ClassSelectorScope
 import com.bettercontent.classselector.integration.OnboardingIntegration
 import com.bettercontent.classselector.integration.OnboardingVisibilitySync
+import com.bettercontent.classselector.embark.SelectionDataRepository
+import com.bettercontent.classselector.network.ClassSelectorNetwork
+import com.bettercontent.classselector.network.RequestOpenMenuPacket
+import com.bettercontent.classselector.network.SyncClassesPacket
 import com.mojang.brigadier.Command
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.EntityArgument
@@ -17,6 +21,7 @@ import net.minecraftforge.event.entity.player.PlayerSetSpawnEvent
 import net.minecraftforge.eventbus.api.EventPriority
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.fml.common.Mod
+import net.minecraftforge.network.PacketDistributor
 
 @Mod.EventBusSubscriber(modid = ClassSelectorMod.MOD_ID)
 object PersonalRespawnEvents {
@@ -67,6 +72,29 @@ object PersonalRespawnEvents {
         event.dispatcher.register(
             Commands.literal("class_selector")
                 .requires { it.hasPermission(2) }
+                .then(
+                    Commands.literal("open")
+                        .then(
+                            Commands.argument("targets", EntityArgument.players())
+                                .executes { ctx ->
+                                    val targets = EntityArgument.getPlayers(ctx, "targets")
+                                    val data = SelectionDataRepository.getOrLoad()
+                                    targets.forEach { player ->
+                                        ClassSelectorNetwork.CHANNEL.send(
+                                            PacketDistributor.PLAYER.with { player },
+                                            SyncClassesPacket.fromSelectionData(ClassSelectorScope.isActiveIn(player.server), data)
+                                        )
+                                        ClassSelectorNetwork.CHANNEL.send(
+                                            PacketDistributor.PLAYER.with { player }, RequestOpenMenuPacket()
+                                        )
+                                    }
+                                    ctx.source.sendSuccess(
+                                        { Component.literal("Opened Class Selector for ${targets.size} player(s).") }, true
+                                    )
+                                    Command.SINGLE_SUCCESS
+                                }
+                        )
+                )
                 .then(
                     Commands.literal("resetrespawn")
                         .then(

@@ -98,6 +98,7 @@ object ClientForgeEvents {
             SelectionMode.EMBARK_POINTS -> mc.setScreen(
                 EmbarkSelectionScreen(ClassSelectionState.embarkItems, ClassSelectionState.pointQuota)
             )
+            SelectionMode.PROGRESSION -> {}
         }
     }
 
@@ -109,7 +110,8 @@ object ClientForgeEvents {
             )
 
             SelectionMode.CLASS,
-            SelectionMode.EMBARK_POINTS -> Component.translatable(
+            SelectionMode.EMBARK_POINTS,
+            SelectionMode.PROGRESSION -> Component.translatable(
                 "message.class_selector.lock_in_prompt",
                 ClientModEvents.openClassMenuKey.translatedKeyMessage
             )
@@ -123,7 +125,8 @@ object ClientForgeEvents {
             )
 
             SelectionMode.CLASS,
-            SelectionMode.EMBARK_POINTS -> Component.translatable(
+            SelectionMode.EMBARK_POINTS,
+            SelectionMode.PROGRESSION -> Component.translatable(
                 "message.class_selector.lock_in_reminder",
                 ClientModEvents.openClassMenuKey.translatedKeyMessage
             )

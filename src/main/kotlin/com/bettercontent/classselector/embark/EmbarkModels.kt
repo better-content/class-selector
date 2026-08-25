@@ -5,7 +5,8 @@ import com.bettercontent.classselector.kit.KitItem
 enum class SelectionMode(val wireName: String) {
     NONE("none"),
     CLASS("class"),
-    EMBARK_POINTS("embark_points");
+    EMBARK_POINTS("embark_points"),
+    PROGRESSION("progression");
 
     companion object {
         fun parse(rawMode: String?): SelectionMode {
@@ -14,8 +15,9 @@ enum class SelectionMode(val wireName: String) {
                 "none", "disabled", "spawn_only", "respawn_only" -> NONE
                 "", "class", "classes" -> CLASS
                 "embark", "embark_points", "point_buy", "points" -> EMBARK_POINTS
+                "progression", "prestige", "world_lifecycle" -> PROGRESSION
                 else -> throw IllegalArgumentException(
-                    "Unsupported selection mode '$rawMode'. Supported modes are 'none', 'class', and 'embark_points'."
+                    "Unsupported selection mode '$rawMode'. Supported modes are 'none', 'class', 'embark_points', and 'progression'."
                 )
             }
         }

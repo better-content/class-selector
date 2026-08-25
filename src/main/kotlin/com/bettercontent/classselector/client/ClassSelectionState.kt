@@ -36,6 +36,7 @@ object ClassSelectionState {
         SelectionMode.NONE -> true
         SelectionMode.CLASS -> kits.isNotEmpty()
         SelectionMode.EMBARK_POINTS -> pointQuota > 0 && embarkItems.isNotEmpty()
+        SelectionMode.PROGRESSION -> false
     }
 
     fun selectedEmbarkPurchases(): List<EmbarkPurchase> =

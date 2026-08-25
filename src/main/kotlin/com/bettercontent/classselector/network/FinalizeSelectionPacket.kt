@@ -134,6 +134,7 @@ class FinalizeSelectionPacket(
 
                 val selectionName = when (selectionData.mode) {
                     SelectionMode.NONE -> {
+                        if (selectionData.starterSchematicannon) KitApplicator.giveStarterSchematicannon(player)
                         OnboardingIntegration.finalizeOnboarding(player, "spawn_only", spawnId)
                         "Starting site locked"
                     }
@@ -145,6 +146,7 @@ class FinalizeSelectionPacket(
                             return@enqueueWork
                         }
                         KitApplicator.apply(player, kit)
+                        if (selectionData.starterSchematicannon) KitApplicator.giveStarterSchematicannon(player)
                         OnboardingIntegration.finalizeOnboarding(player, kit.id, spawnId)
                         kit.title
                     }
@@ -161,6 +163,7 @@ class FinalizeSelectionPacket(
                             purchaseResult.selectedItems,
                             EmbarkPurchaseService.SELECTION_ID
                         )
+                        if (selectionData.starterSchematicannon) KitApplicator.giveStarterSchematicannon(player)
                         OnboardingIntegration.finalizeOnboarding(
                             player,
                             EmbarkPurchaseService.SELECTION_ID,
@@ -168,6 +171,8 @@ class FinalizeSelectionPacket(
                         )
                         "Embark supplies (${purchaseResult.totalCost}/${selectionData.embarkSettings.pointQuota} points)"
                     }
+
+                    SelectionMode.PROGRESSION -> error("Progression mode must resolve before selection finalization")
                 }
 
                 PersonalRespawnService.releasePlayerFromSpectator(player)

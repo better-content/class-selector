@@ -1,8 +1,11 @@
 package com.bettercontent.classselector.kit
 
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
+import net.minecraftforge.registries.ForgeRegistries
 import net.minecraftforge.fml.ModList
 
 object KitApplicator {
@@ -18,6 +21,13 @@ object KitApplicator {
         player.inventory.clearContent()
         items.forEach { giveItemToConfiguredSlot(player, it) }
         player.persistentData.putString(SELECTED_CLASS_TAG, selectionId)
+    }
+
+    fun giveStarterSchematicannon(player: ServerPlayer) {
+        val item = ForgeRegistries.ITEMS.getValue(ResourceLocation("create", "schematicannon"))
+        require(item != null && item != Items.AIR) { "Create Schematicannon is not registered" }
+        val stack = ItemStack(item)
+        if (!player.addItem(stack)) player.drop(stack, false)
     }
 
     private fun giveItemToConfiguredSlot(player: ServerPlayer, kitItem: KitItem) {

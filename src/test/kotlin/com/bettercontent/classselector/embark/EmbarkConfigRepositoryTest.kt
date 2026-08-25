@@ -66,6 +66,9 @@ class EmbarkConfigRepositoryTest {
         assertEquals(SelectionMode.CLASS, SelectionMode.parse("classes"))
         assertEquals(SelectionMode.EMBARK_POINTS, SelectionMode.parse("embark"))
         assertEquals(SelectionMode.EMBARK_POINTS, SelectionMode.parse("point_buy"))
+        assertEquals(SelectionMode.PROGRESSION, SelectionMode.parse("progression"))
+        assertEquals(SelectionMode.PROGRESSION, SelectionMode.parse("prestige"))
+        assertEquals(SelectionMode.PROGRESSION, SelectionMode.parse("world_lifecycle"))
     }
 
     @Test
