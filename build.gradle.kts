@@ -59,8 +59,14 @@ repositories {
     maven("https://maven.minecraftforge.net")
     maven("https://maven.theillusivec4.top/")
     maven("https://thedarkcolour.github.io/KotlinForForge/")
+    maven("https://maven.createmod.net")
+    maven("https://maven.ithundxr.dev/mirror")
+    maven("https://maven.tterrag.com/")
     mavenCentral()
 }
+
+fun deobf(notation: String): Any =
+    requireNotNull(extensions.getByName("fg").withGroovyBuilder { "deobf"(notation) })
 
 dependencies {
     minecraft("net.minecraftforge:forge:${property("minecraft_version")}-${property("forge_version")}")
@@ -74,6 +80,11 @@ dependencies {
     } else {
         compileOnly(fg.deobf(curiosApiNotation))
     }
+    runtimeOnly(deobf("com.simibubi.create:create-${property("minecraft_version")}:${property("create_version")}:slim"))
+    runtimeOnly(deobf("net.createmod.ponder:Ponder-Forge-${property("minecraft_version")}:${property("ponder_version")}"))
+    runtimeOnly(deobf("dev.engine-room.flywheel:flywheel-forge-${property("minecraft_version")}:${property("flywheel_version")}"))
+    runtimeOnly(deobf("com.tterrag.registrate:Registrate:${property("registrate_version")}"))
+    runtimeOnly(deobf("io.github.llamalad7:mixinextras-forge:0.3.6"))
 
     testImplementation(kotlin("test"))
 }
