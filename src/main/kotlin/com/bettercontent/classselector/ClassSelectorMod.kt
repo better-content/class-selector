@@ -37,13 +37,13 @@ object ServerEvents {
     @SubscribeEvent
     fun onServerAboutToStart(event: ServerAboutToStartEvent) {
         // Fail fast during initial startup if active selection config syntax is invalid.
-        SelectionDataRepository.load()
+        SelectionDataRepository.load(event.server)
     }
 
     @JvmStatic
     @SubscribeEvent
     fun onDatapackSync(event: OnDatapackSyncEvent) {
-        val selectionData = SelectionDataRepository.load()
+        val selectionData = SelectionDataRepository.load(event.playerList.server)
         val activeInWorld = ClassSelectorScope.isActiveIn(event.playerList.server)
 
         if (event.player != null) {
@@ -84,6 +84,7 @@ object ServerEvents {
                 SelectionMode.NONE -> "Press K to set your starting spawn and begin."
                 SelectionMode.CLASS -> "Choose a class to begin."
                 SelectionMode.EMBARK_POINTS -> "Choose your starting supplies and respawn to begin."
+                SelectionMode.PROGRESSION -> error("Progression mode must resolve before player login")
             }
             player.sendSystemMessage(Component.literal(joinPrompt))
             ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { player }, RequestOpenMenuPacket())
@@ -105,6 +106,7 @@ object ServerEvents {
         }
         PersonalRespawnService.copyRespawnPoint(original, cloned)
         OnboardingIntegration.copyPersistentState(original, cloned)
+        PersonalRespawnService.scheduleRespawnProtection(cloned)
     }
 
     @JvmStatic

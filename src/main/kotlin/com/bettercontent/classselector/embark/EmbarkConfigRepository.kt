@@ -44,7 +44,8 @@ object EmbarkConfigRepository {
             SelectionMode.NONE -> Unit
             SelectionMode.CLASS -> Unit
 
-            SelectionMode.EMBARK_POINTS -> {
+            SelectionMode.EMBARK_POINTS,
+            SelectionMode.PROGRESSION -> {
                 require(settings.pointQuota > 0) { "Embark pointQuota must be positive at ${embarkPath()}" }
                 require(settings.items.isNotEmpty()) { "Embark mode requires at least one item in ${embarkPath()}" }
             }

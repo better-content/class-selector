@@ -5,6 +5,7 @@ import com.bettercontent.classselector.integration.OnboardingIntegration
 import com.bettercontent.classselector.integration.PlayerStartFinalizedEvent
 import com.bettercontent.classselector.kit.ClassKitRepository
 import com.bettercontent.classselector.kit.KitItemStackFactory
+import com.bettercontent.classselector.kit.KitApplicator
 import com.bettercontent.classselector.kit.KitSlot
 import com.bettercontent.classselector.respawn.PersonalRespawnPoint
 import com.bettercontent.classselector.respawn.PersonalRespawnService
@@ -13,11 +14,13 @@ import net.minecraft.core.BlockPos
 import net.minecraft.gametest.framework.GameTest
 import net.minecraft.gametest.framework.GameTestAssertException
 import net.minecraft.gametest.framework.GameTestHelper
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.block.Blocks
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.gametest.GameTestHolder
+import net.minecraftforge.registries.ForgeRegistries
 import java.util.UUID
 
 @GameTestHolder(ClassSelectorMod.MOD_ID)
@@ -78,6 +81,20 @@ object ClassSelectorGameTests {
             }
         }
 
+        helper.succeed()
+    }
+
+    @JvmStatic
+    @GameTest(template = "empty")
+    fun schematicannonCapstoneGrantsRegisteredCreateItem(helper: GameTestHelper) {
+        val player = testPlayer(helper)
+        val schematicannon = ForgeRegistries.ITEMS.getValue(ResourceLocation("create", "schematicannon"))
+            ?: throw GameTestAssertException("Create Schematicannon is not registered")
+        KitApplicator.giveStarterSchematicannon(player)
+        helper.assertTrue(
+            player.inventory.items.any { it.`is`(schematicannon) },
+            "Expected the capstone grant to place a registered Create Schematicannon in player inventory"
+        )
         helper.succeed()
     }
 

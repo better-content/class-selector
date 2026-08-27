@@ -2,32 +2,103 @@ package com.bettercontent.classselector.embark
 
 import com.bettercontent.classselector.kit.ClassKit
 import com.bettercontent.classselector.kit.ClassKitRepository
+import net.minecraft.server.MinecraftServer
+import net.minecraftforge.fml.ModList
 
 data class SelectionData(
     val mode: SelectionMode,
     val kits: List<ClassKit>,
-    val embarkSettings: EmbarkSettings
+    val embarkSettings: EmbarkSettings,
+    val starterSchematicannon: Boolean = false
 )
 
+internal data class ProgressionPolicy(
+    val mode: SelectionMode,
+    val unlockedClassIds: Set<String>,
+    val embarkBudget: Int,
+    val starterSchematicannon: Boolean
+)
+
+internal object WorldLifecyclePolicy {
+    fun resolve(server: MinecraftServer): ProgressionPolicy {
+        require(ModList.get().isLoaded("world_lifecycle_manager")) {
+            "Class Selector progression mode requires world_lifecycle_manager"
+        }
+        val type = Class.forName("com.bettercontent.worldlifecyclemanager.PrestigePerks")
+        val policy = type.getMethod("activeOnboardingPolicy", MinecraftServer::class.java).invoke(null, server)
+            ?: error("World Lifecycle Manager returned no onboarding policy")
+        val policyType = policy.javaClass
+        val mode = when (policyType.getMethod("mode").invoke(policy).toString()) {
+            "SPAWN_ONLY" -> SelectionMode.NONE
+            "CLASS" -> SelectionMode.CLASS
+            "EMBARK" -> SelectionMode.EMBARK_POINTS
+            else -> error("World Lifecycle Manager returned an unknown onboarding mode")
+        }
+        @Suppress("UNCHECKED_CAST")
+        val classes = (policyType.getMethod("unlockedClassIds").invoke(policy) as Set<Any>).map { it.toString() }.toSet()
+        return ProgressionPolicy(
+            mode,
+            classes,
+            policyType.getMethod("embarkBudget").invoke(policy) as Int,
+            policyType.getMethod("starterSchematicannon").invoke(policy) as Boolean
+        )
+    }
+}
+
 object SelectionDataRepository {
+    private val canonicalClassIds = setOf(
+        "wayfinder", "field_cook", "rail_scout", "flood_runner", "market_runner", "trail_wrangler"
+    )
+
     @Volatile
     private var cached: SelectionData? = null
 
-    fun load(): SelectionData {
-        val embarkSettings = EmbarkConfigRepository.load()
-        val kits = when (embarkSettings.mode) {
-            SelectionMode.CLASS -> ClassKitRepository.load()
-            SelectionMode.NONE,
-            SelectionMode.EMBARK_POINTS -> ClassKitRepository.get()
+    fun load(server: MinecraftServer): SelectionData {
+        val configured = EmbarkConfigRepository.load()
+        if (configured.mode != SelectionMode.PROGRESSION) {
+            val kits = when (configured.mode) {
+                SelectionMode.CLASS -> ClassKitRepository.load()
+                SelectionMode.NONE, SelectionMode.EMBARK_POINTS -> ClassKitRepository.get()
+                SelectionMode.PROGRESSION -> error("unreachable")
+            }
+            return SelectionData(configured.mode, kits, configured).also { cached = it }
         }
-        val data = SelectionData(
-            mode = embarkSettings.mode,
-            kits = kits,
-            embarkSettings = embarkSettings
-        )
-        cached = data
-        return data
+
+        val allKits = ClassKitRepository.load()
+        return resolveProgression(configured, allKits, WorldLifecyclePolicy.resolve(server)).also { cached = it }
     }
 
-    fun getOrLoad(): SelectionData = cached ?: load()
+    internal fun resolveProgression(
+        configured: EmbarkSettings,
+        allKits: List<ClassKit>,
+        policy: ProgressionPolicy
+    ): SelectionData {
+        require(allKits.map { it.id }.toSet() == canonicalClassIds) {
+            "Progression mode requires exactly the canonical class kits $canonicalClassIds"
+        }
+        val missingEmbarkSpecs = allKits.flatMap { it.items }.map { it.item }.toSet() - configured.items.map { it.item }.toSet()
+        require(missingEmbarkSpecs.isEmpty()) {
+            "Embark progression catalog is missing class item specs: ${missingEmbarkSpecs.sorted()}"
+        }
+
+        require(policy.unlockedClassIds.all(canonicalClassIds::contains)) {
+            "World Lifecycle Manager unlocked unknown classes: ${policy.unlockedClassIds - canonicalClassIds}"
+        }
+        require(policy.embarkBudget in setOf(0, 6, 9, 12, 15, 18)) {
+            "World Lifecycle Manager returned invalid Embark budget ${policy.embarkBudget}"
+        }
+        val effectiveKits = if (policy.mode == SelectionMode.CLASS) {
+            allKits.filter { it.id in policy.unlockedClassIds }
+        } else emptyList()
+        if (policy.mode == SelectionMode.CLASS) require(effectiveKits.isNotEmpty()) {
+            "Class selection is active without an unlocked class"
+        }
+        val effectiveEmbark = configured.copy(
+            mode = policy.mode,
+            pointQuota = if (policy.mode == SelectionMode.EMBARK_POINTS) policy.embarkBudget else configured.pointQuota
+        )
+        return SelectionData(policy.mode, effectiveKits, effectiveEmbark, policy.starterSchematicannon)
+    }
+
+    fun getOrLoad(): SelectionData = cached ?: error("Class Selector selection data was not loaded during server startup")
 }

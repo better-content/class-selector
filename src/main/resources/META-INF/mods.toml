@@ -6,8 +6,8 @@ license="AGPL-3.0-or-later"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-displayURL="https://github.com/geraldsummers/class_selector"
-issueTrackerURL="https://github.com/geraldsummers/class_selector/issues"
+displayURL="https://github.com/better-content/class-selector"
+issueTrackerURL="https://github.com/better-content/class-selector/issues"
 authors="Gerald Summers"
 description='''
 Class selection mod with JSON-defined starter kits, spectator gating for new players, and per-player permanent respawn selection.
@@ -38,5 +38,12 @@ Class selection mod with JSON-defined starter kits, spectator gating for new pla
     modId="curios"
     mandatory=true
     versionRange="[${curios_version},)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="world_lifecycle_manager"
+    mandatory=false
+    versionRange="[0.1.0,)"
     ordering="AFTER"
     side="BOTH"

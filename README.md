@@ -54,8 +54,8 @@ Use the jar produced at `build/libs/class-selector-<version>.jar`.
 - Client: install the same mod set and matching Forge `47.4.x` on Minecraft `1.20.1`.
 
 Project URLs:
-- Repository: `https://github.com/geraldsummers/class_selector`
-- Issue tracker: `https://github.com/geraldsummers/class_selector/issues`
+- Repository: `https://github.com/better-content/class-selector`
+- Issue tracker: `https://github.com/better-content/class-selector/issues`
 
 ## Test commands
 
@@ -63,15 +63,15 @@ Use Java 17 for all commands.
 
 ### Verification
 ```bash
-JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH ./gradlew verifyFast
-JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH ./gradlew verifyFull
+./gradlew verifyFast
+./gradlew verifyFull
 ```
 
 `verifyFast` runs the JVM and coverage lane. `verifyFull` adds the headless Forge GameTest pass.
 
 ### Local client
 ```bash
-JAVA_HOME=$HOME/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH ./run-client
+./run-client
 ```
 
 `run-client` is a small helper that runs `gradle runClient` for convenience.
