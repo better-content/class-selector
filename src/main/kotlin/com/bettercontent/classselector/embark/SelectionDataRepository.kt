@@ -87,12 +87,45 @@ object SelectionDataRepository {
         require(policy.embarkBudget in setOf(0, 6, 9, 12, 15, 18)) {
             "World Lifecycle Manager returned invalid Embark budget ${policy.embarkBudget}"
         }
+        when (policy.mode) {
+            SelectionMode.NONE -> {
+                require(policy.unlockedClassIds.isEmpty()) {
+                    "Spawn-only onboarding cannot expose unlocked classes"
+                }
+                require(policy.embarkBudget == 0) {
+                    "Spawn-only onboarding cannot expose an Embark budget"
+                }
+                require(!policy.starterSchematicannon) {
+                    "Spawn-only onboarding cannot grant the Schematicannon capstone"
+                }
+            }
+            SelectionMode.CLASS -> {
+                require(policy.unlockedClassIds.size in 1 until canonicalClassIds.size) {
+                    "Class onboarding requires between one and five unlocked classes"
+                }
+                require(policy.embarkBudget == 0) {
+                    "Class onboarding cannot expose an Embark budget"
+                }
+                require(!policy.starterSchematicannon) {
+                    "Class onboarding cannot grant the Schematicannon capstone"
+                }
+            }
+            SelectionMode.EMBARK_POINTS -> {
+                require(policy.unlockedClassIds == canonicalClassIds) {
+                    "Embark onboarding requires all canonical classes to be unlocked"
+                }
+                require(policy.embarkBudget in setOf(6, 9, 12, 15, 18)) {
+                    "Embark onboarding requires an active budget tier"
+                }
+                require(!policy.starterSchematicannon || policy.embarkBudget == 18) {
+                    "The Schematicannon capstone requires the maximum Embark budget"
+                }
+            }
+            SelectionMode.PROGRESSION -> error("World Lifecycle Manager cannot return progression as an onboarding mode")
+        }
         val effectiveKits = if (policy.mode == SelectionMode.CLASS) {
             allKits.filter { it.id in policy.unlockedClassIds }
         } else emptyList()
-        if (policy.mode == SelectionMode.CLASS) require(effectiveKits.isNotEmpty()) {
-            "Class selection is active without an unlocked class"
-        }
         val effectiveEmbark = configured.copy(
             mode = policy.mode,
             pointQuota = if (policy.mode == SelectionMode.EMBARK_POINTS) policy.embarkBudget else configured.pointQuota

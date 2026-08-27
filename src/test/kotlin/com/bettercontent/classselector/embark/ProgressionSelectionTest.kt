@@ -26,7 +26,7 @@ class ProgressionSelectionTest {
     )
 
     @Test
-    fun startsWithSpawnOnlyBeforeTheFreeClassSelector() {
+    fun biomeSelectionGenerationRemainsSpawnOnly() {
         val data = resolve(SelectionMode.NONE)
 
         assertEquals(SelectionMode.NONE, data.mode)
@@ -35,8 +35,45 @@ class ProgressionSelectionTest {
     }
 
     @Test
+    fun followsTheCompleteTwelveGenerationProgression() {
+        val policies = buildList {
+            add(policy(SelectionMode.NONE))
+            classIds.take(5).indices.forEach { lastUnlocked ->
+                add(policy(SelectionMode.CLASS, classIds.take(lastUnlocked + 1).toSet()))
+            }
+            add(policy(SelectionMode.EMBARK_POINTS, classIds.toSet(), 6))
+            listOf(9, 12, 15, 18).forEach { budget ->
+                add(policy(SelectionMode.EMBARK_POINTS, classIds.toSet(), budget))
+            }
+            add(policy(SelectionMode.EMBARK_POINTS, classIds.toSet(), 18, starterSchematicannon = true))
+        }
+
+        assertEquals(12, policies.size)
+        policies.forEachIndexed { index, progressionPolicy ->
+            val data = SelectionDataRepository.resolveProgression(configured, kits, progressionPolicy)
+            when (index) {
+                0 -> {
+                    assertEquals(SelectionMode.NONE, data.mode)
+                    assertTrue(data.kits.isEmpty())
+                }
+                in 1..5 -> {
+                    assertEquals(SelectionMode.CLASS, data.mode)
+                    assertEquals(index, data.kits.size)
+                }
+                else -> {
+                    assertEquals(SelectionMode.EMBARK_POINTS, data.mode)
+                    assertTrue(data.kits.isEmpty())
+                }
+            }
+        }
+        assertTrue(
+            SelectionDataRepository.resolveProgression(configured, kits, policies.last()).starterSchematicannon
+        )
+    }
+
+    @Test
     fun revealsExactlyThePaidClassesInCanonicalOrder() {
-        classIds.indices.forEach { lastUnlocked ->
+        classIds.dropLast(1).indices.forEach { lastUnlocked ->
             val unlocked = classIds.take(lastUnlocked + 1).toSet()
             val data = resolve(SelectionMode.CLASS, unlocked)
 
@@ -83,10 +120,25 @@ class ProgressionSelectionTest {
             resolve(SelectionMode.CLASS, emptySet())
         }
         assertFailsWith<IllegalArgumentException> {
+            resolve(SelectionMode.CLASS, classIds.toSet())
+        }
+        assertFailsWith<IllegalArgumentException> {
             resolve(SelectionMode.CLASS, setOf("unknown"))
         }
         assertFailsWith<IllegalArgumentException> {
             resolve(SelectionMode.EMBARK_POINTS, classIds.toSet(), 7)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            resolve(SelectionMode.EMBARK_POINTS, classIds.dropLast(1).toSet(), 6)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            resolve(SelectionMode.NONE, setOf(classIds.first()))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            resolve(SelectionMode.NONE, budget = 6)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            resolve(SelectionMode.EMBARK_POINTS, classIds.toSet(), 15, starterSchematicannon = true)
         }
     }
 
