@@ -3,7 +3,6 @@ package com.bettercontent.classselector.kit
 import com.bettercontent.classselector.ClassSelectorMod
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import com.google.gson.reflect.TypeToken
 import net.minecraftforge.fml.loading.FMLPaths
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -15,12 +14,11 @@ object ClassKitRepository {
     private const val DEFAULT_TEMPLATE_RESOURCE: String = "/data/class_selector/class_kits/kits.json"
 
     private val gson = Gson()
-    private val type = object : TypeToken<List<ClassKit>>() {}.type
     @Volatile
     private var cached: List<ClassKit> = emptyList()
 
     fun parse(json: String): List<ClassKit> = try {
-        gson.fromJson<List<ClassKit>>(json, type) ?: emptyList()
+        gson.fromJson(json, Array<ClassKit>::class.java)?.toList() ?: emptyList()
     } catch (exception: JsonSyntaxException) {
         throw IllegalArgumentException("Invalid JSON syntax at ${kitsPath()}: ${exception.message}", exception)
     }

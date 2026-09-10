@@ -6,7 +6,6 @@ import com.bettercontent.classselector.embark.SelectionData
 import com.bettercontent.classselector.embark.SelectionMode
 import com.bettercontent.classselector.kit.ClassKit
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraftforge.network.NetworkEvent
 import java.util.function.Supplier
@@ -20,8 +19,6 @@ class SyncClassesPacket(
 ) {
     companion object {
         private val gson = Gson()
-        private val kitsType = object : TypeToken<List<ClassKit>>() {}.type
-        private val embarkItemsType = object : TypeToken<List<EmbarkPoolItem>>() {}.type
 
         fun fromSelectionData(activeInCurrentWorld: Boolean, selectionData: SelectionData) =
             SyncClassesPacket(
@@ -57,10 +54,12 @@ class SyncClassesPacket(
                 ClassSelectionState.activeInCurrentWorld = packet.activeInCurrentWorld
                 ClassSelectionState.selectionMode = nextMode
                 ClassSelectionState.pointQuota = packet.pointQuota
-                ClassSelectionState.kits = runCatching { gson.fromJson<List<ClassKit>>(packet.kitsJsonPayload, kitsType) }
+                ClassSelectionState.kits = runCatching {
+                    gson.fromJson(packet.kitsJsonPayload, Array<ClassKit>::class.java)?.toList() ?: emptyList()
+                }
                     .getOrDefault(emptyList())
                 ClassSelectionState.embarkItems = runCatching {
-                    gson.fromJson<List<EmbarkPoolItem>>(packet.embarkItemsJsonPayload, embarkItemsType)
+                    gson.fromJson(packet.embarkItemsJsonPayload, Array<EmbarkPoolItem>::class.java)?.toList() ?: emptyList()
                 }
                     .getOrDefault(emptyList())
                 if (previousMode != nextMode) {
