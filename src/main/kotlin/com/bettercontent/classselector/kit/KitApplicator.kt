@@ -5,8 +5,10 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
-import net.minecraftforge.registries.ForgeRegistries
 import net.minecraftforge.fml.ModList
+import net.minecraftforge.registries.ForgeRegistries
+import top.theillusivec4.curios.api.CuriosApi
+import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler
 
 object KitApplicator {
     const val SELECTED_CLASS_TAG: String = "class_selector:selected_class"
@@ -73,21 +75,13 @@ object KitApplicator {
             return
         }
 
-        val slots = handler.javaClass.getMethod("getSlots").invoke(handler) as? Int ?: run {
-            player.addItem(stack)
-            return
-        }
-        val dynamicHandler = handler.javaClass.getMethod("getStacks").invoke(handler) ?: run {
-            player.addItem(stack)
-            return
-        }
-        val getStackInSlot = dynamicHandler.javaClass.getMethod("getStackInSlot", Int::class.javaPrimitiveType)
-        val setStackInSlot = dynamicHandler.javaClass.getMethod("setStackInSlot", Int::class.javaPrimitiveType, ItemStack::class.java)
+        val slots = handler.slots
+        val dynamicHandler = handler.stacks
 
         for (index in 0 until slots) {
-            val currentStack = getStackInSlot.invoke(dynamicHandler, index) as? ItemStack ?: continue
+            val currentStack = dynamicHandler.getStackInSlot(index)
             if (currentStack.isEmpty) {
-                setStackInSlot.invoke(dynamicHandler, index, stack.copyWithCount(1))
+                dynamicHandler.setStackInSlot(index, stack.copyWithCount(1))
                 val remainder = stack.count - 1
                 if (remainder > 0) {
                     player.addItem(stack.copyWithCount(remainder))
@@ -99,17 +93,11 @@ object KitApplicator {
         player.addItem(stack)
     }
 
-    private fun resolveCurioStacksHandler(player: ServerPlayer, curioIdentifier: String): Any? = runCatching {
-        val curiosApiClass = Class.forName("top.theillusivec4.curios.api.CuriosApi")
-        val getCuriosInventory = curiosApiClass.getMethod("getCuriosInventory", net.minecraft.world.entity.LivingEntity::class.java)
-        val inventoryOptional = getCuriosInventory.invoke(null, player) ?: return null
-        val resolveMethod = inventoryOptional.javaClass.getMethod("resolve")
-        val resolvedInventory = resolveMethod.invoke(inventoryOptional)
-        val orElseMethod = resolvedInventory.javaClass.getMethod("orElse", Any::class.java)
-        val inventoryHandler = orElseMethod.invoke(resolvedInventory, null) ?: return null
-        val getStacksHandler = inventoryHandler.javaClass.getMethod("getStacksHandler", String::class.java)
-        val stacksHandlerOptional = getStacksHandler.invoke(inventoryHandler, curioIdentifier) ?: return null
-        val handlerOrElse = stacksHandlerOptional.javaClass.getMethod("orElse", Any::class.java)
-        handlerOrElse.invoke(stacksHandlerOptional, null)
-    }.getOrNull()
+    private fun resolveCurioStacksHandler(
+        player: ServerPlayer,
+        curioIdentifier: String
+    ): ICurioStacksHandler? {
+        val inventory = CuriosApi.getCuriosInventory(player).resolve().orElse(null) ?: return null
+        return inventory.getStacksHandler(curioIdentifier).orElse(null)
+    }
 }

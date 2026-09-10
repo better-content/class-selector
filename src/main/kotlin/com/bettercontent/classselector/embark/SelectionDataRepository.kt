@@ -2,6 +2,7 @@ package com.bettercontent.classselector.embark
 
 import com.bettercontent.classselector.kit.ClassKit
 import com.bettercontent.classselector.kit.ClassKitRepository
+import com.bettercontent.worldlifecyclemanager.PrestigePerks
 import net.minecraft.server.MinecraftServer
 import net.minecraftforge.fml.ModList
 
@@ -24,23 +25,17 @@ internal object WorldLifecyclePolicy {
         require(ModList.get().isLoaded("world_lifecycle_manager")) {
             "Class Selector progression mode requires world_lifecycle_manager"
         }
-        val type = Class.forName("com.bettercontent.worldlifecyclemanager.PrestigePerks")
-        val policy = type.getMethod("activeOnboardingPolicy", MinecraftServer::class.java).invoke(null, server)
-            ?: error("World Lifecycle Manager returned no onboarding policy")
-        val policyType = policy.javaClass
-        val mode = when (policyType.getMethod("mode").invoke(policy).toString()) {
-            "SPAWN_ONLY" -> SelectionMode.NONE
-            "CLASS" -> SelectionMode.CLASS
-            "EMBARK" -> SelectionMode.EMBARK_POINTS
-            else -> error("World Lifecycle Manager returned an unknown onboarding mode")
+        val policy = PrestigePerks.activeOnboardingPolicy(server)
+        val mode = when (policy.mode()) {
+            PrestigePerks.OnboardingMode.SPAWN_ONLY -> SelectionMode.NONE
+            PrestigePerks.OnboardingMode.CLASS -> SelectionMode.CLASS
+            PrestigePerks.OnboardingMode.EMBARK -> SelectionMode.EMBARK_POINTS
         }
-        @Suppress("UNCHECKED_CAST")
-        val classes = (policyType.getMethod("unlockedClassIds").invoke(policy) as Set<Any>).map { it.toString() }.toSet()
         return ProgressionPolicy(
             mode,
-            classes,
-            policyType.getMethod("embarkBudget").invoke(policy) as Int,
-            policyType.getMethod("starterSchematicannon").invoke(policy) as Boolean
+            policy.unlockedClassIds(),
+            policy.embarkBudget(),
+            policy.starterSchematicannon()
         )
     }
 }

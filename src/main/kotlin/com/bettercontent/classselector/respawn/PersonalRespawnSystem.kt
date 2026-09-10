@@ -269,15 +269,7 @@ object PersonalRespawnService {
     }
 
     private fun clearVanillaRespawnPosition(player: ServerPlayer) {
-        val method = ServerPlayer::class.java.getMethod(
-            "setRespawnPosition",
-            ResourceKey::class.java,
-            BlockPos::class.java,
-            java.lang.Float.TYPE,
-            java.lang.Boolean.TYPE,
-            java.lang.Boolean.TYPE
-        )
-        method.invoke(player, null, null, 0f, false, false)
+        player.setRespawnPosition(null, null, 0f, false, false)
     }
 
     private fun teleportPlayerToRespawnPoint(server: MinecraftServer, player: ServerPlayer, point: PersonalRespawnPoint) {

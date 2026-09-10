@@ -80,6 +80,7 @@ dependencies {
     } else {
         compileOnly(fg.deobf(curiosApiNotation))
     }
+    compileOnly(files("../world-lifecycle-manager/build/libs/world-lifecycle-manager-0.1.0.jar"))
     runtimeOnly(deobf("com.simibubi.create:create-${property("minecraft_version")}:${property("create_version")}:slim"))
     runtimeOnly(deobf("net.createmod.ponder:Ponder-Forge-${property("minecraft_version")}:${property("ponder_version")}"))
     runtimeOnly(deobf("dev.engine-room.flywheel:flywheel-forge-${property("minecraft_version")}:${property("flywheel_version")}"))
