@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -12,13 +11,44 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    env:
+      BC_CUSTOM_MOD_JAR_DIR: ${{ github.workspace }}/build/ci-provider-jars
     steps:
       - uses: actions/checkout@v4
+      - name: Check out pinned provider baseline
+        uses: actions/checkout@v4
+        with:
+          repository: better-content/better-content-modpack
+          ref: 7daccf81465d0803824831f014d695419c6e7696
+          path: build/ci-pack-baseline
+          sparse-checkout: |
+            .github/scripts
+            gradle/active-custom-mods.json
+            index.toml
+            mods
+          sparse-checkout-cone-mode: false
+      - name: Prepare verified provider JARs
+        run: >-
+          python3 build/ci-pack-baseline/.github/scripts/prepare-provider-jars.py
+          --pack-root build/ci-pack-baseline
+          --repository class-selector
+          --output "$BC_CUSTOM_MOD_JAR_DIR"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Verify
+      - name: Verify repository
         run: ./gradlew --no-daemon verifyFast
+      - name: Preserve verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-verification
+          path: |
+            build/reports/
+            build/test-results/
+            build/ci-provider-jars/providers.json
+          if-no-files-found: ignore
+          retention-days: 14
