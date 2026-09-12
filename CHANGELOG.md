@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-
+- Paused daylight while every connected player is in spectator mode, in both singleplayer and multiplayer.
 - Standardized the repository, artifact, package, and mod namespace under the canonical Better Content identity; this is a clean break without legacy aliases or migration.
 - Replaced server-wide respawn hub voting with per-player permanent respawn selection at class pick time.
 

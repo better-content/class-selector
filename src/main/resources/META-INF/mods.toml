@@ -13,6 +13,9 @@ description='''
 Class selection mod with JSON-defined starter kits, spectator gating for new players, and per-player permanent respawn selection.
 '''
 
+[[mixins]]
+    config="class_selector.mixins.json"
+
 [[dependencies.${mod_id}]]
     modId="forge"
     mandatory=true

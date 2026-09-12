@@ -10,6 +10,12 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "2.2.21"
     id("net.minecraftforge.gradle") version "6.0.54"
     id("org.parchmentmc.librarian.forgegradle") version "1.2.0"
+    id("org.spongepowered.mixin") version "0.7.38"
+}
+
+mixin {
+    add(sourceSets.main.get(), "class_selector.refmap.json")
+    config("class_selector.mixins.json")
 }
 
 group = "com.bettercontent"
@@ -80,6 +86,7 @@ fun deobf(notation: String): Any =
 
 dependencies {
     minecraft("net.minecraftforge:forge:${property("minecraft_version")}-${property("forge_version")}")
+    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
     implementation("thedarkcolour:kotlinforforge:${property("kotlinforforge_version")}")
     compileOnly(fg.deobf(curiosApiNotation))
     runtimeOnly(fg.deobf("top.theillusivec4.curios:curios-forge:${property("curios_version")}"))
