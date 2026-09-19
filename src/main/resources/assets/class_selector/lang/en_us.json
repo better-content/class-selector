@@ -1,8 +1,10 @@
 {
   "key.class_selector.open_menu": "Open Class Selector",
+  "key.class_selector.commit_start": "Commit Starting Site",
   "key.categories.class_selector": "Class Selector",
   "message.class_selector.lock_in_prompt": "Press %s to lock a class, lock a respawn point, then begin.",
   "message.class_selector.lock_in_reminder": "Press %s to finish locking your class and respawn point.",
   "message.class_selector.spawn_only_prompt": "Press %s to set your starting spawn and begin.",
-  "message.class_selector.spawn_only_reminder": "Press %s to set your starting spawn and begin."
+  "message.class_selector.spawn_only_reminder": "Press %s to set your starting spawn and begin.",
+  "message.class_selector.commit_confirm": "Press Begin again, or hold Shift and press your Commit Starting Site binding, to confirm."
 }

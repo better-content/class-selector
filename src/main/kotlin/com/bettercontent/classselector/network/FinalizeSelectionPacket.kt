@@ -121,14 +121,38 @@ class FinalizeSelectionPacket(
                     return@enqueueWork
                 }
 
-                val location = ResourceLocation.tryParse(packet.dimensionId)
-                if (location == null || player.server.getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, location)) == null) {
+                val kit = when (selectionData.mode) {
+                    SelectionMode.CLASS -> selectionData.kits.firstOrNull { it.id == packet.classId } ?: run {
+                        player.sendSystemMessage(Component.literal("Invalid class selection."))
+                        return@enqueueWork
+                    }
+                    else -> null
+                }
+                val purchases = when (selectionData.mode) {
+                    SelectionMode.EMBARK_POINTS -> runCatching {
+                        EmbarkPurchaseService.validate(selectionData.embarkSettings, packet.embarkPurchases)
+                    }.getOrElse { error ->
+                        player.sendSystemMessage(Component.literal(error.message ?: "Invalid embark purchases."))
+                        return@enqueueWork
+                    }
+                    else -> null
+                }
+                if (ResourceLocation.tryParse(packet.dimensionId) == null) {
                     player.sendSystemMessage(Component.literal("Invalid respawn dimension."))
                     return@enqueueWork
                 }
-
-                val requestedPoint = PersonalRespawnPoint(packet.dimensionId, packet.x, packet.y, packet.z)
-                val preparedPoint = PersonalRespawnService.setRespawnPoint(player, requestedPoint)
+                val approvedPoint = PersonalRespawnService.validateOnboardingRespawnPoint(
+                    player, PersonalRespawnPoint(packet.dimensionId, packet.x, packet.y, packet.z)
+                ) ?: run {
+                    player.sendSystemMessage(Component.literal("Choose a safe temperate site at your current position."))
+                    return@enqueueWork
+                }
+                // All rejection paths above are side-effect free. Commit the site before grants.
+                val preparedPoint = runCatching { PersonalRespawnService.commitPreparedRespawnPoint(player, approvedPoint) }
+                    .getOrElse { error ->
+                        player.sendSystemMessage(Component.literal(error.message ?: "Starting site is no longer safe."))
+                        return@enqueueWork
+                    }
                 val resolvedPoint = preparedPoint.point
                 val spawnId = OnboardingIntegration.buildSpawnId(resolvedPoint)
 
@@ -140,27 +164,17 @@ class FinalizeSelectionPacket(
                     }
 
                     SelectionMode.CLASS -> {
-                        val kit = selectionData.kits.firstOrNull { it.id == packet.classId }
-                        if (kit == null) {
-                            player.sendSystemMessage(Component.literal("Invalid class selection."))
-                            return@enqueueWork
-                        }
-                        KitApplicator.apply(player, kit)
+                        val selectedKit = requireNotNull(kit)
+                        KitApplicator.apply(player, selectedKit)
                         if (selectionData.starterSchematicannon) KitApplicator.giveStarterSchematicannon(player)
-                        OnboardingIntegration.finalizeOnboarding(player, kit.id, spawnId)
-                        kit.title
+                        OnboardingIntegration.finalizeOnboarding(player, selectedKit.id, spawnId)
+                        selectedKit.title
                     }
 
                     SelectionMode.EMBARK_POINTS -> {
-                        val purchaseResult = runCatching {
-                            EmbarkPurchaseService.validate(selectionData.embarkSettings, packet.embarkPurchases)
-                        }.getOrElse { error ->
-                            player.sendSystemMessage(Component.literal(error.message ?: "Invalid embark purchases."))
-                            return@enqueueWork
-                        }
                         KitApplicator.applyItems(
                             player,
-                            purchaseResult.selectedItems,
+                            purchases!!.selectedItems,
                             EmbarkPurchaseService.SELECTION_ID
                         )
                         if (selectionData.starterSchematicannon) KitApplicator.giveStarterSchematicannon(player)
@@ -169,7 +183,7 @@ class FinalizeSelectionPacket(
                             EmbarkPurchaseService.SELECTION_ID,
                             spawnId
                         )
-                        "Embark supplies (${purchaseResult.totalCost}/${selectionData.embarkSettings.pointQuota} points)"
+                        "Embark supplies (${purchases!!.totalCost}/${selectionData.embarkSettings.pointQuota} points)"
                     }
 
                     SelectionMode.PROGRESSION -> error("Progression mode must resolve before selection finalization")

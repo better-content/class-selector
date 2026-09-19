@@ -41,9 +41,15 @@ private const val RESPAWN_REPEL_RADIUS = 64.0
 private val RESPAWN_PROTECTION_DELAYS_TICKS = longArrayOf(1L, 3L, 7L)
 const val RESPAWN_PURGE_TAG = "class_selector:respawn_purge"
 private const val RESPAWN_PURGE_TAG_LEGACY = "classselector:respawn_purge"
+private val SAFE_TEMPERATE_BIOMES = setOf(
+    "minecraft:plains", "minecraft:sunflower_plains", "minecraft:meadow",
+    "minecraft:forest", "minecraft:flower_forest", "minecraft:birch_forest"
+)
 
 internal fun isInsideRespawnPurge(dx: Double, dy: Double, dz: Double): Boolean =
     dx * dx + dy * dy + dz * dz <= RESPAWN_REPEL_RADIUS * RESPAWN_REPEL_RADIUS
+
+internal fun isSafeTemperateBiomeId(id: String): Boolean = id in SAFE_TEMPERATE_BIOMES
 
 data class PersonalRespawnPoint(val dim: String, val x: Int, val y: Int, val z: Int)
 data class PreparedRespawnPoint(val point: PersonalRespawnPoint, val sitePrepared: Boolean, val locationAdjusted: Boolean)
@@ -82,8 +88,32 @@ object PersonalRespawnService {
 
     fun setRespawnPoint(player: ServerPlayer, point: PersonalRespawnPoint): PreparedRespawnPoint {
         val preparedPoint = prepareRespawnPoint(player.server, point)
-        saveRespawnPoint(player, preparedPoint.point)
+        commitPreparedRespawnPoint(player, preparedPoint)
         return preparedPoint
+    }
+
+    /**
+     * Resolves an onboarding site without changing blocks or player data.  The packet handler uses
+     * this before it grants a kit, stores a permanent spawn, or marks onboarding complete.
+     */
+    fun validateOnboardingRespawnPoint(player: ServerPlayer, requestedPoint: PersonalRespawnPoint): PreparedRespawnPoint? {
+        if (requestedPoint.dim != dimensionId(player.serverLevel())) return null
+        if (abs(requestedPoint.x - player.blockX) > 1 || abs(requestedPoint.y - player.blockY) > 1 || abs(requestedPoint.z - player.blockZ) > 1) return null
+
+        val level = player.serverLevel()
+        val resolved = resolveRespawnPoint(level, requestedPoint) ?: return null
+        if (!isSafeTemperateBiome(level, BlockPos(resolved.x, resolved.y, resolved.z))) return null
+        return PreparedRespawnPoint(resolved, sitePrepared = false, locationAdjusted = resolved != requestedPoint)
+    }
+
+    fun commitPreparedRespawnPoint(player: ServerPlayer, approved: PreparedRespawnPoint): PreparedRespawnPoint {
+        val level = resolveLevel(player.server, approved.point.dim)
+            ?: error("Approved respawn dimension disappeared before commit")
+        val feet = BlockPos(approved.point.x, approved.point.y, approved.point.z)
+        check(isValidFeetPos(level, feet)) { "Approved respawn site became unsafe before commit" }
+        val prepared = approved.copy(sitePrepared = prepareRespawnSite(level, feet))
+        saveRespawnPoint(player, prepared.point)
+        return prepared
     }
 
     fun clearRespawnPoint(player: ServerPlayer) {
@@ -153,10 +183,8 @@ object PersonalRespawnService {
     internal fun prepareRespawnPoint(server: MinecraftServer, requestedPoint: PersonalRespawnPoint): PreparedRespawnPoint {
         val level = resolveLevel(server, requestedPoint.dim)
             ?: return PreparedRespawnPoint(requestedPoint, sitePrepared = false, locationAdjusted = false)
-
-        val origin = clampFeetPos(level, BlockPos(requestedPoint.x, requestedPoint.y, requestedPoint.z))
-        val targetFeetPos = if (isValidFeetPos(level, origin)) origin else findNearestValidFeetPos(level, origin) ?: origin
-        val point = PersonalRespawnPoint(requestedPoint.dim, targetFeetPos.x, targetFeetPos.y, targetFeetPos.z)
+        val point = resolveRespawnPoint(level, requestedPoint) ?: requestedPoint
+        val targetFeetPos = BlockPos(point.x, point.y, point.z)
         val sitePrepared = prepareRespawnSite(level, targetFeetPos)
 
         return PreparedRespawnPoint(
@@ -164,6 +192,19 @@ object PersonalRespawnService {
             sitePrepared = sitePrepared,
             locationAdjusted = point != requestedPoint
         )
+    }
+
+    private fun resolveRespawnPoint(level: ServerLevel, requestedPoint: PersonalRespawnPoint): PersonalRespawnPoint? {
+        val origin = clampFeetPos(level, BlockPos(requestedPoint.x, requestedPoint.y, requestedPoint.z))
+        val target = if (isValidFeetPos(level, origin)) origin else findNearestValidFeetPos(level, origin) ?: return null
+        return PersonalRespawnPoint(dimensionId(level), target.x, target.y, target.z)
+    }
+
+    private fun isSafeTemperateBiome(level: ServerLevel, feetPos: BlockPos): Boolean {
+        // This deliberately small whitelist is stable across data packs.  It keeps onboarding out
+        // of temperature extremes and dangerous specialist biomes until WLM selects a successor.
+        val id = level.getBiome(feetPos).unwrapKey().map { it.location().toString() }.orElse("")
+        return isSafeTemperateBiomeId(id)
     }
 
     private fun clampFeetPos(level: ServerLevel, pos: BlockPos): BlockPos {

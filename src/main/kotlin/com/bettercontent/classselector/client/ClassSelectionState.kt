@@ -24,12 +24,14 @@ object ClassSelectionState {
     var reminderCooldownTicks: Int = 0
     var lockedClassId: String? = null
     var lockedRespawn: PendingRespawnSelection? = null
+    var commitConfirmationArmed: Boolean = false
     val embarkPurchases: MutableMap<String, Int> = linkedMapOf()
 
     fun clearPendingLocks() {
         lockedClassId = null
         lockedRespawn = null
         embarkPurchases.clear()
+        commitConfirmationArmed = false
     }
 
     fun hasSelectionOptions(): Boolean = when (selectionMode) {

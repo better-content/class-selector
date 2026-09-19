@@ -5,6 +5,7 @@ import com.bettercontent.classselector.embark.SelectionMode
 import com.mojang.blaze3d.platform.InputConstants
 import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent
@@ -21,11 +22,18 @@ object ClientModEvents {
         GLFW.GLFW_KEY_K,
         "key.categories.class_selector"
     )
+    val commitStartingSiteKey: KeyMapping = KeyMapping(
+        "key.class_selector.commit_start",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_C,
+        "key.categories.class_selector"
+    )
 
     @JvmStatic
     @SubscribeEvent
     fun registerKeys(event: RegisterKeyMappingsEvent) {
         event.register(openClassMenuKey)
+        event.register(commitStartingSiteKey)
     }
 }
 
@@ -47,6 +55,17 @@ object ClientForgeEvents {
         }
 
         OnboardingPlayerVisibility.tick(mc)
+
+        if (ClassSelectionState.activeInCurrentWorld && ClassSelectionState.selectionRequired &&
+            ClientModEvents.commitStartingSiteKey.consumeClick() && Screen.hasShiftDown()
+        ) {
+            when (ClassSelectionState.selectionMode) {
+                SelectionMode.NONE -> ClientOnboardingActions.submitSpawnOnly(mc)
+                SelectionMode.CLASS -> ClassSelectionState.lockedClassId?.let(ClientOnboardingActions::submitClassSelection)
+                SelectionMode.EMBARK_POINTS -> ClientOnboardingActions.submitEmbarkSelection(ClassSelectionState.selectedEmbarkPurchases())
+                SelectionMode.PROGRESSION -> Unit
+            }
+        }
 
         if (ClassSelectionState.activeInCurrentWorld && ClassSelectionState.selectionRequired && ClientModEvents.openClassMenuKey.consumeClick()) {
             if (ClassSelectionState.selectionMode == SelectionMode.NONE) {
