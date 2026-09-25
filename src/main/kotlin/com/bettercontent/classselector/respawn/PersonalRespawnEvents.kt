@@ -62,7 +62,6 @@ object PersonalRespawnEvents {
         if (event.phase != TickEvent.Phase.END) return
         RespawnTaskScheduler.tick(event.server)
         if (event.server.tickCount % 20 == 0) {
-            PersonalRespawnService.releasePlayersWaitingForInitialSpawn(event.server)
             OnboardingVisibilitySync.sync(event.server)
         }
     }

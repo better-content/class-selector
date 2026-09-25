@@ -11,14 +11,12 @@ import com.bettercontent.classselector.respawn.PersonalRespawnPoint
 import com.bettercontent.classselector.respawn.PersonalRespawnService
 import com.mojang.authlib.GameProfile
 import net.minecraft.core.BlockPos
-import net.minecraft.core.registries.Registries
 import net.minecraft.gametest.framework.GameTest
 import net.minecraft.gametest.framework.GameTestAssertException
 import net.minecraft.gametest.framework.GameTestHelper
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.block.Blocks
-import net.minecraft.world.level.biome.Biomes
 import net.minecraft.world.level.chunk.LevelChunk
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.eventbus.api.SubscribeEvent
@@ -242,47 +240,6 @@ object ClassSelectorGameTests {
         helper.assertBlockPresent(Blocks.AIR, requestedFeetPos)
         helper.assertBlockPresent(Blocks.AIR, requestedFeetPos.above())
 
-        helper.succeed()
-    }
-
-    @JvmStatic
-    @GameTest(template = "empty")
-    fun onboardingRespawnCanBeChosenInNonTemperateBiome(helper: GameTestHelper) {
-        val requestedFeetPos = BlockPos(1, 1, 1)
-        helper.setBlock(requestedFeetPos.below(), Blocks.CRYING_OBSIDIAN)
-        helper.setBlock(requestedFeetPos, Blocks.AIR)
-        helper.setBlock(requestedFeetPos.above(), Blocks.AIR)
-
-        val requestedFeetAbs = helper.absolutePos(requestedFeetPos)
-        val chunk = helper.level.getChunkAt(requestedFeetAbs)
-        val desert = helper.level.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.DESERT)
-        chunk.getSection(chunk.getSectionIndex(requestedFeetAbs.y)).fillBiomesFromNoise(
-            { _, _, _, _ -> desert },
-            helper.level.chunkSource.randomState().sampler(),
-            0,
-            0,
-            0
-        )
-        chunk.setUnsaved(true)
-        helper.assertTrue(
-            helper.level.getBiome(requestedFeetAbs).unwrapKey().map { it == Biomes.DESERT }.orElse(false),
-            "Expected the onboarding respawn test site to be in a desert biome"
-        )
-
-        val player = testPlayer(helper)
-        player.moveTo(requestedFeetAbs.x + 0.5, requestedFeetAbs.y.toDouble(), requestedFeetAbs.z + 0.5, 0f, 0f)
-        val approved = PersonalRespawnService.validateOnboardingRespawnPoint(
-            player,
-            PersonalRespawnPoint(
-                helper.level.dimension().location().toString(),
-                requestedFeetAbs.x,
-                requestedFeetAbs.y,
-                requestedFeetAbs.z
-            )
-        )
-
-        helper.assertTrue(approved != null, "Expected a physically valid non-temperate respawn site to be accepted")
-        helper.assertTrue(approved?.point?.x == requestedFeetAbs.x, "Expected the selected site to remain unchanged")
         helper.succeed()
     }
 

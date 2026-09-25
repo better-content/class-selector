@@ -26,7 +26,7 @@ class ProgressionSelectionTest {
     )
 
     @Test
-    fun biomeSelectionGenerationRemainsSpawnOnly() {
+    fun firstGenerationRemainsSpawnOnly() {
         val data = resolve(SelectionMode.NONE)
 
         assertEquals(SelectionMode.NONE, data.mode)

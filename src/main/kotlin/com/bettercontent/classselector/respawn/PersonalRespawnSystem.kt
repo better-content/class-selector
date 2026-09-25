@@ -3,7 +3,6 @@ package com.bettercontent.classselector.respawn
 import com.bettercontent.classselector.ClassSelectorMod
 import com.bettercontent.classselector.ClassSelectorScope
 import com.bettercontent.classselector.integration.OnboardingIntegration
-import com.bettercontent.worldlifecyclemanager.api.InitialSpawnService
 import com.mojang.brigadier.Command
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.EntityArgument
@@ -20,7 +19,6 @@ import net.minecraft.world.level.GameType
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.entity.monster.Enemy
 import kotlin.math.abs
-import java.util.UUID
 
 private const val FX_DURATION_TICKS = 60L
 private const val FX_PULSE_EVERY_TICKS = 2L
@@ -54,7 +52,6 @@ object PersonalRespawnService {
     private const val RESPAWN_X_TAG = "class_selector:respawn_x"
     private const val RESPAWN_Y_TAG = "class_selector:respawn_y"
     private const val RESPAWN_Z_TAG = "class_selector:respawn_z"
-    private val initialSpawnReleaseWaiters = mutableSetOf<UUID>()
 
     fun assignCurrentLocation(player: ServerPlayer): PersonalRespawnPoint {
         val point = PersonalRespawnPoint(
@@ -123,32 +120,12 @@ object PersonalRespawnService {
         if (!ClassSelectorScope.isActiveIn(player.server)) return false
         if (!OnboardingIntegration.hasCompletedOnboarding(player)) return false
         val point = getRespawnPoint(player) ?: return false
-        if (WorldLifecycleSpawnIntegration.isPending(player.server)) {
-            initialSpawnReleaseWaiters += player.uuid
-            return false
-        }
-        initialSpawnReleaseWaiters -= player.uuid
         if (!player.isSpectator) return true
 
         player.setGameMode(GameType.SURVIVAL)
-        if (WorldLifecycleSpawnIntegration.appliesToWorld(player.server)) {
-            val overworld = player.server.overworld()
-            val spawn = overworld.sharedSpawnPos
-            player.teleportTo(overworld, spawn.x + 0.5, spawn.y.toDouble(), spawn.z + 0.5, player.yRot, player.xRot)
-        } else {
-            teleportPlayerToRespawnPoint(player.server, player, point)
-        }
+        teleportPlayerToRespawnPoint(player.server, player, point)
         scheduleRespawnProtection(player.server, player.uuid)
         return true
-    }
-
-    fun releasePlayersWaitingForInitialSpawn(server: MinecraftServer) {
-        if (initialSpawnReleaseWaiters.isEmpty() || WorldLifecycleSpawnIntegration.isPending(server)) return
-        val waiting = initialSpawnReleaseWaiters.toList()
-        waiting.forEach { uuid ->
-            server.playerList.getPlayer(uuid)?.let(::releasePlayerFromSpectator)
-                ?: run { initialSpawnReleaseWaiters -= uuid }
-        }
     }
 
     fun handleRespawn(player: ServerPlayer) {
@@ -427,25 +404,4 @@ object PersonalRespawnService {
     }
 
     private fun dimensionId(level: ServerLevel): String = level.dimension().location().toString()
-}
-
-private object WorldLifecycleSpawnIntegration {
-    private enum class Status { NOT_APPLICABLE, PENDING, RESOLVED, FALLBACK }
-
-    fun isPending(server: MinecraftServer): Boolean = status(server) == Status.PENDING
-
-    fun appliesToWorld(server: MinecraftServer): Boolean = when (status(server)) {
-        Status.RESOLVED, Status.FALLBACK -> true
-        Status.NOT_APPLICABLE, Status.PENDING -> false
-    }
-
-    private fun status(server: MinecraftServer): Status {
-        if (!net.minecraftforge.fml.ModList.get().isLoaded("world_lifecycle_manager")) return Status.NOT_APPLICABLE
-        return when (InitialSpawnService.status(server)) {
-            InitialSpawnService.Status.NOT_APPLICABLE -> Status.NOT_APPLICABLE
-            InitialSpawnService.Status.PENDING -> Status.PENDING
-            InitialSpawnService.Status.RESOLVED -> Status.RESOLVED
-            InitialSpawnService.Status.FALLBACK -> Status.FALLBACK
-        }
-    }
 }
