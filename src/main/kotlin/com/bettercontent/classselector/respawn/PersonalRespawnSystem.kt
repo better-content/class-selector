@@ -12,13 +12,14 @@ import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.server.MinecraftServer
 import net.minecraft.world.level.GameType
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.entity.monster.Enemy
 import kotlin.math.abs
+import java.util.UUID
 
 private const val FX_DURATION_TICKS = 60L
 private const val FX_PULSE_EVERY_TICKS = 2L
@@ -41,15 +42,8 @@ private const val RESPAWN_REPEL_RADIUS = 64.0
 private val RESPAWN_PROTECTION_DELAYS_TICKS = longArrayOf(1L, 3L, 7L)
 const val RESPAWN_PURGE_TAG = "class_selector:respawn_purge"
 private const val RESPAWN_PURGE_TAG_LEGACY = "classselector:respawn_purge"
-private val SAFE_TEMPERATE_BIOMES = setOf(
-    "minecraft:plains", "minecraft:sunflower_plains", "minecraft:meadow",
-    "minecraft:forest", "minecraft:flower_forest", "minecraft:birch_forest"
-)
-
 internal fun isInsideRespawnPurge(dx: Double, dy: Double, dz: Double): Boolean =
     dx * dx + dy * dy + dz * dz <= RESPAWN_REPEL_RADIUS * RESPAWN_REPEL_RADIUS
-
-internal fun isSafeTemperateBiomeId(id: String): Boolean = id in SAFE_TEMPERATE_BIOMES
 
 data class PersonalRespawnPoint(val dim: String, val x: Int, val y: Int, val z: Int)
 data class PreparedRespawnPoint(val point: PersonalRespawnPoint, val sitePrepared: Boolean, val locationAdjusted: Boolean)
@@ -59,6 +53,7 @@ object PersonalRespawnService {
     private const val RESPAWN_X_TAG = "class_selector:respawn_x"
     private const val RESPAWN_Y_TAG = "class_selector:respawn_y"
     private const val RESPAWN_Z_TAG = "class_selector:respawn_z"
+    private val initialSpawnReleaseWaiters = mutableSetOf<UUID>()
 
     fun assignCurrentLocation(player: ServerPlayer): PersonalRespawnPoint {
         val point = PersonalRespawnPoint(
@@ -102,7 +97,6 @@ object PersonalRespawnService {
 
         val level = player.serverLevel()
         val resolved = resolveRespawnPoint(level, requestedPoint) ?: return null
-        if (!isSafeTemperateBiome(level, BlockPos(resolved.x, resolved.y, resolved.z))) return null
         return PreparedRespawnPoint(resolved, sitePrepared = false, locationAdjusted = resolved != requestedPoint)
     }
 
@@ -128,12 +122,32 @@ object PersonalRespawnService {
         if (!ClassSelectorScope.isActiveIn(player.server)) return false
         if (!OnboardingIntegration.hasCompletedOnboarding(player)) return false
         val point = getRespawnPoint(player) ?: return false
+        if (WorldLifecycleSpawnIntegration.isPending(player.server)) {
+            initialSpawnReleaseWaiters += player.uuid
+            return false
+        }
+        initialSpawnReleaseWaiters -= player.uuid
         if (!player.isSpectator) return true
 
         player.setGameMode(GameType.SURVIVAL)
-        teleportPlayerToRespawnPoint(player.server, player, point)
+        if (WorldLifecycleSpawnIntegration.appliesToWorld(player.server)) {
+            val overworld = player.server.overworld()
+            val spawn = overworld.sharedSpawnPos
+            player.teleportTo(overworld, spawn.x + 0.5, spawn.y.toDouble(), spawn.z + 0.5, player.yRot, player.xRot)
+        } else {
+            teleportPlayerToRespawnPoint(player.server, player, point)
+        }
         scheduleRespawnProtection(player.server, player.uuid)
         return true
+    }
+
+    fun releasePlayersWaitingForInitialSpawn(server: MinecraftServer) {
+        if (initialSpawnReleaseWaiters.isEmpty() || WorldLifecycleSpawnIntegration.isPending(server)) return
+        val waiting = initialSpawnReleaseWaiters.toList()
+        waiting.forEach { uuid ->
+            server.playerList.getPlayer(uuid)?.let(::releasePlayerFromSpectator)
+                ?: run { initialSpawnReleaseWaiters -= uuid }
+        }
     }
 
     fun handleRespawn(player: ServerPlayer) {
@@ -198,13 +212,6 @@ object PersonalRespawnService {
         val origin = clampFeetPos(level, BlockPos(requestedPoint.x, requestedPoint.y, requestedPoint.z))
         val target = if (isValidFeetPos(level, origin)) origin else findNearestValidFeetPos(level, origin) ?: return null
         return PersonalRespawnPoint(dimensionId(level), target.x, target.y, target.z)
-    }
-
-    private fun isSafeTemperateBiome(level: ServerLevel, feetPos: BlockPos): Boolean {
-        // This deliberately small whitelist is stable across data packs.  It keeps onboarding out
-        // of temperature extremes and dangerous specialist biomes until WLM selects a successor.
-        val id = level.getBiome(feetPos).unwrapKey().map { it.location().toString() }.orElse("")
-        return isSafeTemperateBiomeId(id)
     }
 
     private fun clampFeetPos(level: ServerLevel, pos: BlockPos): BlockPos {
@@ -419,4 +426,24 @@ object PersonalRespawnService {
     }
 
     private fun dimensionId(level: ServerLevel): String = level.dimension().location().toString()
+}
+
+private object WorldLifecycleSpawnIntegration {
+    private enum class Status { NOT_APPLICABLE, PENDING, RESOLVED, FALLBACK }
+
+    fun isPending(server: MinecraftServer): Boolean = status(server) == Status.PENDING
+
+    fun appliesToWorld(server: MinecraftServer): Boolean = when (status(server)) {
+        Status.RESOLVED, Status.FALLBACK -> true
+        Status.NOT_APPLICABLE, Status.PENDING -> false
+    }
+
+    private fun status(server: MinecraftServer): Status {
+        if (!net.minecraftforge.fml.ModList.get().isLoaded("world_lifecycle_manager")) return Status.NOT_APPLICABLE
+        return runCatching {
+            val api = Class.forName("com.bettercontent.worldlifecyclemanager.api.InitialSpawnService")
+            val value = api.getMethod("status", MinecraftServer::class.java).invoke(null, server)
+            Status.valueOf(value.toString())
+        }.getOrElse { Status.PENDING }
+    }
 }

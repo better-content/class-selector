@@ -5,6 +5,7 @@ A Forge mod that forces new players to pick a class before starting:
 - Client is prompted to open class menu with `K`.
 - Class menu shows title, blurb, and description.
 - Players lock a class and lock a respawn point separately, then press `Begin`.
+- New worlds place first entry at the temperate shared spawn selected by World Lifecycle Manager; the permanent respawn point can be in any biome.
 - Daylight pauses while every connected player is spectating and resumes when any player enters another game mode.
 - Kits are JSON-defined in `config/class_selector/kits.json`.
 - Alternatively, `config/class_selector/embark.json` can switch onboarding to an embark-style point-buy item pool.

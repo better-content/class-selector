@@ -144,7 +144,7 @@ class FinalizeSelectionPacket(
                 val approvedPoint = PersonalRespawnService.validateOnboardingRespawnPoint(
                     player, PersonalRespawnPoint(packet.dimensionId, packet.x, packet.y, packet.z)
                 ) ?: run {
-                    player.sendSystemMessage(Component.literal("Choose a safe temperate site at your current position."))
+                    player.sendSystemMessage(Component.literal("Choose a valid respawn site at your current position."))
                     return@enqueueWork
                 }
                 // All rejection paths above are side-effect free. Commit the site before grants.
@@ -189,7 +189,9 @@ class FinalizeSelectionPacket(
                     SelectionMode.PROGRESSION -> error("Progression mode must resolve before selection finalization")
                 }
 
-                PersonalRespawnService.releasePlayerFromSpectator(player)
+                if (!PersonalRespawnService.releasePlayerFromSpectator(player)) {
+                    player.sendSystemMessage(Component.literal("Your initial world spawn is being prepared. You will enter shortly."))
+                }
                 OnboardingVisibilitySync.sync(player.server)
                 val message = when {
                     preparedPoint.sitePrepared && preparedPoint.locationAdjusted ->
