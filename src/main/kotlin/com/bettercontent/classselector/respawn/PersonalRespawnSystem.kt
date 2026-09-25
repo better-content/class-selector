@@ -3,6 +3,7 @@ package com.bettercontent.classselector.respawn
 import com.bettercontent.classselector.ClassSelectorMod
 import com.bettercontent.classselector.ClassSelectorScope
 import com.bettercontent.classselector.integration.OnboardingIntegration
+import com.bettercontent.worldlifecyclemanager.api.InitialSpawnService
 import com.mojang.brigadier.Command
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.EntityArgument
@@ -440,10 +441,11 @@ private object WorldLifecycleSpawnIntegration {
 
     private fun status(server: MinecraftServer): Status {
         if (!net.minecraftforge.fml.ModList.get().isLoaded("world_lifecycle_manager")) return Status.NOT_APPLICABLE
-        return runCatching {
-            val api = Class.forName("com.bettercontent.worldlifecyclemanager.api.InitialSpawnService")
-            val value = api.getMethod("status", MinecraftServer::class.java).invoke(null, server)
-            Status.valueOf(value.toString())
-        }.getOrElse { Status.PENDING }
+        return when (InitialSpawnService.status(server)) {
+            InitialSpawnService.Status.NOT_APPLICABLE -> Status.NOT_APPLICABLE
+            InitialSpawnService.Status.PENDING -> Status.PENDING
+            InitialSpawnService.Status.RESOLVED -> Status.RESOLVED
+            InitialSpawnService.Status.FALLBACK -> Status.FALLBACK
+        }
     }
 }
