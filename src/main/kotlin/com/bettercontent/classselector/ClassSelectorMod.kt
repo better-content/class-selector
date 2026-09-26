@@ -3,13 +3,11 @@ package com.bettercontent.classselector
 import com.bettercontent.classselector.kit.KitApplicator
 import com.bettercontent.classselector.integration.OnboardingIntegration
 import com.bettercontent.classselector.integration.OnboardingVisibilitySync
-import com.bettercontent.classselector.embark.SelectionMode
 import com.bettercontent.classselector.embark.SelectionDataRepository
 import com.bettercontent.classselector.network.ClassSelectorNetwork
 import com.bettercontent.classselector.network.RequestOpenMenuPacket
 import com.bettercontent.classselector.network.SyncClassesPacket
 import com.bettercontent.classselector.respawn.PersonalRespawnService
-import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.GameType
 import net.minecraftforge.event.OnDatapackSyncEvent
@@ -80,13 +78,6 @@ object ServerEvents {
 
         if (!OnboardingIntegration.hasCompletedOnboarding(player)) {
             player.setGameMode(GameType.SPECTATOR)
-            val joinPrompt = when (selectionData.mode) {
-                SelectionMode.NONE -> "Press K to set your starting spawn and begin."
-                SelectionMode.CLASS -> "Choose a class to begin."
-                SelectionMode.EMBARK_POINTS -> "Choose your starting supplies and respawn to begin."
-                SelectionMode.PROGRESSION -> error("Progression mode must resolve before player login")
-            }
-            player.sendSystemMessage(Component.literal(joinPrompt))
             ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { player }, RequestOpenMenuPacket())
             return
         }

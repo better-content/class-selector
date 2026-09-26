@@ -57,6 +57,10 @@ object ClientForgeEvents {
         }
 
         OnboardingPlayerVisibility.tick(mc)
+        if (ClassSelectionState.noticeTicksRemaining > 0) {
+            ClassSelectionState.noticeTicksRemaining--
+            if (ClassSelectionState.noticeTicksRemaining == 0) ClassSelectionState.noticeText = null
+        }
 
         if (ClassSelectionState.activeInCurrentWorld && ClassSelectionState.selectionRequired &&
             ClientModEvents.commitStartingSiteKey.consumeClick() && Screen.hasShiftDown()
@@ -75,7 +79,7 @@ object ClientForgeEvents {
             } else if (ClassSelectionState.hasSelectionOptions()) {
                 openSelectionScreen(mc)
             } else {
-                player.sendSystemMessage(Component.literal("Starting options are still syncing."))
+                ClassSelectionState.showNotice("Starting options are still syncing.")
             }
         }
 
@@ -91,12 +95,11 @@ object ClientForgeEvents {
     @SubscribeEvent
     fun onRenderGui(event: RenderGuiEvent.Post) {
         val mc = Minecraft.getInstance()
-        if (mc.options.hideGui || mc.player == null || mc.screen != null ||
-            !ClassSelectionState.activeInCurrentWorld || !ClassSelectionState.selectionRequired
-        ) return
+        if (mc.options.hideGui || mc.player == null || mc.screen != null) return
+        if (!ClassSelectionState.activeInCurrentWorld && ClassSelectionState.noticeText == null) return
 
         val key = ClientModEvents.openClassMenuKey.translatedKeyMessage
-        val instructions = when (ClassSelectionState.selectionMode) {
+        val instructions = if (ClassSelectionState.activeInCurrentWorld && ClassSelectionState.selectionRequired) when (ClassSelectionState.selectionMode) {
             SelectionMode.NONE -> listOf(
                 Component.translatable("message.class_selector.spawn_step_1", key),
                 Component.translatable("message.class_selector.spawn_step_2", key)
@@ -111,17 +114,22 @@ object ClientForgeEvents {
                 Component.translatable("message.class_selector.embark_step_2", key),
                 Component.translatable("message.class_selector.embark_step_3")
             )
-            SelectionMode.PROGRESSION -> return
-        }
+            SelectionMode.PROGRESSION -> emptyList()
+        } else emptyList()
+        val notice = ClassSelectionState.noticeText?.let { Component.literal(it) }
+        if (instructions.isEmpty() && notice == null) return
         val font = mc.font
         val maxWidth = (event.window.guiScaledWidth - 24).coerceIn(1, 320)
-        val lines = instructions.flatMap { font.split(it, maxWidth) }
+        val instructionLines = instructions.flatMap { font.split(it, maxWidth) }
+        val noticeLines = notice?.let { font.split(it, maxWidth) }.orEmpty()
+        val lines = instructionLines + noticeLines
         val boxWidth = lines.maxOfOrNull(font::width) ?: return
         val x = 8
         val y = 8
         event.guiGraphics.fill(x - 4, y - 4, x + boxWidth + 4, y + lines.size * 10 + 4, INSTRUCTION_BACKGROUND)
         lines.forEachIndexed { index, line ->
-            event.guiGraphics.drawString(font, line, x, y + index * 10, INSTRUCTION_COLOR)
+            val color = if (index < instructionLines.size) INSTRUCTION_COLOR else 0xD58A8A
+            event.guiGraphics.drawString(font, line, x, y + index * 10, color)
         }
     }
 

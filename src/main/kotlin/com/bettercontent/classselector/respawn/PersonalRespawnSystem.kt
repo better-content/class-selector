@@ -9,7 +9,6 @@ import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.registries.Registries
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
@@ -155,10 +154,6 @@ object PersonalRespawnService {
         val point = getRespawnPoint(player) ?: return false
         saveRespawnPoint(player, point)
         return true
-    }
-
-    fun sendRespawnResetMessage(player: ServerPlayer) {
-        player.sendSystemMessage(Component.literal("Your permanent class respawn point was cleared by an admin."))
     }
 
     private fun saveRespawnPoint(player: ServerPlayer, point: PersonalRespawnPoint) {

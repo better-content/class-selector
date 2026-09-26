@@ -8,10 +8,10 @@ import com.bettercontent.classselector.embark.SelectionDataRepository
 import com.bettercontent.classselector.network.ClassSelectorNetwork
 import com.bettercontent.classselector.network.RequestOpenMenuPacket
 import com.bettercontent.classselector.network.SyncClassesPacket
+import com.bettercontent.classselector.network.SelectionNoticePacket
 import com.mojang.brigadier.Command
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.EntityArgument
-import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.event.TickEvent
@@ -88,9 +88,6 @@ object PersonalRespawnEvents {
                                             PacketDistributor.PLAYER.with { player }, RequestOpenMenuPacket()
                                         )
                                     }
-                                    ctx.source.sendSuccess(
-                                        { Component.literal("Opened Class Selector for ${targets.size} player(s).") }, true
-                                    )
                                     Command.SINGLE_SUCCESS
                                 }
                         )
@@ -103,12 +100,11 @@ object PersonalRespawnEvents {
                                     val targets = EntityArgument.getPlayers(ctx, "targets")
                                     targets.forEach { player ->
                                         PersonalRespawnService.clearRespawnPoint(player)
-                                        PersonalRespawnService.sendRespawnResetMessage(player)
+                                        ClassSelectorNetwork.CHANNEL.send(
+                                            PacketDistributor.PLAYER.with { player },
+                                            SelectionNoticePacket("Your permanent respawn point was cleared by an admin.", false)
+                                        )
                                     }
-                                    ctx.source.sendSuccess(
-                                        { Component.literal("Cleared permanent respawn for ${targets.size} player(s).") },
-                                        true
-                                    )
                                     Command.SINGLE_SUCCESS
                                 }
                         )

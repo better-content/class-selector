@@ -58,6 +58,8 @@ object ClientOnboardingActions {
     internal fun markSelectionSubmitted() {
         ClassSelectionState.selectionRequired = false
         ClassSelectionState.promptOpen = false
+        ClassSelectionState.noticeText = null
+        ClassSelectionState.noticeTicksRemaining = 0
     }
 
     private fun confirmCommit(): Boolean {

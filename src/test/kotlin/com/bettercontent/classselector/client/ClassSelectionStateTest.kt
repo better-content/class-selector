@@ -23,6 +23,7 @@ class ClassSelectionStateTest {
         ClassSelectionState.selectionMode = SelectionMode.EMBARK_POINTS
         ClassSelectionState.promptOpen = true
         ClassSelectionState.selectionRequired = true
+        ClassSelectionState.showNotice("Retry selection")
         ClassSelectionState.lockedClassId = "miner"
         ClassSelectionState.lockedRespawn = PendingRespawnSelection("minecraft:overworld", 1, 64, 2)
         ClassSelectionState.embarkItems = listOf(poolItem())
@@ -35,6 +36,7 @@ class ClassSelectionStateTest {
         assertEquals(SelectionMode.NONE, ClassSelectionState.selectionMode)
         assertFalse(ClassSelectionState.promptOpen)
         assertFalse(ClassSelectionState.selectionRequired)
+        assertNull(ClassSelectionState.noticeText)
         assertTrue(ClassSelectionState.kits.isEmpty())
         assertTrue(ClassSelectionState.embarkItems.isEmpty())
         assertTrue(ClassSelectionState.embarkPurchases.isEmpty())
@@ -72,11 +74,13 @@ class ClassSelectionStateTest {
     fun submittingSelectionClearsPromptState() {
         ClassSelectionState.selectionRequired = true
         ClassSelectionState.promptOpen = true
+        ClassSelectionState.showNotice("Retry selection")
 
         ClientOnboardingActions.markSelectionSubmitted()
 
         assertFalse(ClassSelectionState.selectionRequired)
         assertFalse(ClassSelectionState.promptOpen)
+        assertNull(ClassSelectionState.noticeText)
     }
 
     @Test

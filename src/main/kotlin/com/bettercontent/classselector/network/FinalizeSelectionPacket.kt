@@ -12,9 +12,10 @@ import com.bettercontent.classselector.network.FinalizeSelectionPacket.Companion
 import com.bettercontent.classselector.respawn.PersonalRespawnPoint
 import com.bettercontent.classselector.respawn.PersonalRespawnService
 import net.minecraft.network.FriendlyByteBuf
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.server.level.ServerPlayer
 import net.minecraftforge.network.NetworkEvent
+import net.minecraftforge.network.PacketDistributor
 import java.util.function.Supplier
 
 class FinalizeSelectionPacket(
@@ -30,6 +31,10 @@ class FinalizeSelectionPacket(
         const val MAX_DIMENSION_ID_LENGTH: Int = 128
         private const val MAX_SELECTION_ID_LENGTH: Int = 128
         private const val MAX_PURCHASES: Int = 256
+
+        private fun reject(player: ServerPlayer, message: String) {
+            ClassSelectorNetwork.CHANNEL.send(PacketDistributor.PLAYER.with { player }, SelectionNoticePacket(message, true))
+        }
 
         fun spawnOnly(dimensionId: String, x: Int, y: Int, z: Int): FinalizeSelectionPacket =
             FinalizeSelectionPacket(
@@ -117,13 +122,17 @@ class FinalizeSelectionPacket(
                 val selectionData = SelectionDataRepository.getOrLoad()
                 val requestedMode = runCatching { SelectionMode.parse(packet.selectionMode) }.getOrNull()
                 if (requestedMode == null || requestedMode != selectionData.mode) {
-                    player.sendSystemMessage(Component.literal("Starting selection mode changed. Open the menu and try again."))
+                    ClassSelectorNetwork.CHANNEL.send(
+                        PacketDistributor.PLAYER.with { player },
+                        SyncClassesPacket.fromSelectionData(true, selectionData)
+                    )
+                    reject(player, "Starting selection mode changed. Open the menu and try again.")
                     return@enqueueWork
                 }
 
                 val kit = when (selectionData.mode) {
                     SelectionMode.CLASS -> selectionData.kits.firstOrNull { it.id == packet.classId } ?: run {
-                        player.sendSystemMessage(Component.literal("Invalid class selection."))
+                        reject(player, "Invalid class selection.")
                         return@enqueueWork
                     }
                     else -> null
@@ -132,35 +141,34 @@ class FinalizeSelectionPacket(
                     SelectionMode.EMBARK_POINTS -> runCatching {
                         EmbarkPurchaseService.validate(selectionData.embarkSettings, packet.embarkPurchases)
                     }.getOrElse { error ->
-                        player.sendSystemMessage(Component.literal(error.message ?: "Invalid embark purchases."))
+                        reject(player, error.message ?: "Invalid embark purchases.")
                         return@enqueueWork
                     }
                     else -> null
                 }
                 if (ResourceLocation.tryParse(packet.dimensionId) == null) {
-                    player.sendSystemMessage(Component.literal("Invalid respawn dimension."))
+                    reject(player, "Invalid respawn dimension.")
                     return@enqueueWork
                 }
                 val approvedPoint = PersonalRespawnService.validateOnboardingRespawnPoint(
                     player, PersonalRespawnPoint(packet.dimensionId, packet.x, packet.y, packet.z)
                 ) ?: run {
-                    player.sendSystemMessage(Component.literal("Choose a valid respawn site at your current position."))
+                    reject(player, "Choose a valid respawn site at your current position.")
                     return@enqueueWork
                 }
                 // All rejection paths above are side-effect free. Commit the site before grants.
                 val preparedPoint = runCatching { PersonalRespawnService.commitPreparedRespawnPoint(player, approvedPoint) }
                     .getOrElse { error ->
-                        player.sendSystemMessage(Component.literal(error.message ?: "Starting site is no longer safe."))
+                        reject(player, error.message ?: "Starting site is no longer safe.")
                         return@enqueueWork
                     }
                 val resolvedPoint = preparedPoint.point
                 val spawnId = OnboardingIntegration.buildSpawnId(resolvedPoint)
 
-                val selectionName = when (selectionData.mode) {
+                when (selectionData.mode) {
                     SelectionMode.NONE -> {
                         if (selectionData.starterSchematicannon) KitApplicator.giveStarterSchematicannon(player)
                         OnboardingIntegration.finalizeOnboarding(player, "spawn_only", spawnId)
-                        "Starting site locked"
                     }
 
                     SelectionMode.CLASS -> {
@@ -168,7 +176,6 @@ class FinalizeSelectionPacket(
                         KitApplicator.apply(player, selectedKit)
                         if (selectionData.starterSchematicannon) KitApplicator.giveStarterSchematicannon(player)
                         OnboardingIntegration.finalizeOnboarding(player, selectedKit.id, spawnId)
-                        selectedKit.title
                     }
 
                     SelectionMode.EMBARK_POINTS -> {
@@ -183,27 +190,18 @@ class FinalizeSelectionPacket(
                             EmbarkPurchaseService.SELECTION_ID,
                             spawnId
                         )
-                        "Embark supplies (${purchases!!.totalCost}/${selectionData.embarkSettings.pointQuota} points)"
                     }
 
                     SelectionMode.PROGRESSION -> error("Progression mode must resolve before selection finalization")
                 }
 
                 if (!PersonalRespawnService.releasePlayerFromSpectator(player)) {
-                    player.sendSystemMessage(Component.literal("Your initial world spawn is being prepared. You will enter shortly."))
+                    ClassSelectorNetwork.CHANNEL.send(
+                        PacketDistributor.PLAYER.with { player },
+                        SelectionNoticePacket("Your starting site is being prepared. You will enter shortly.", false)
+                    )
                 }
                 OnboardingVisibilitySync.sync(player.server)
-                val message = when {
-                    preparedPoint.sitePrepared && preparedPoint.locationAdjusted ->
-                        "Starting loadout selected: $selectionName. Permanent respawn prepared at ${resolvedPoint.dim} ${resolvedPoint.x} ${resolvedPoint.y} ${resolvedPoint.z}."
-                    preparedPoint.sitePrepared ->
-                        "Starting loadout selected: $selectionName. Permanent respawn prepared in place at ${resolvedPoint.dim} ${resolvedPoint.x} ${resolvedPoint.y} ${resolvedPoint.z}."
-                    preparedPoint.locationAdjusted ->
-                        "Starting loadout selected: $selectionName. Permanent respawn set to ${resolvedPoint.dim} ${resolvedPoint.x} ${resolvedPoint.y} ${resolvedPoint.z}."
-                    else ->
-                        "Starting loadout selected: $selectionName. Permanent respawn set to ${resolvedPoint.dim} ${resolvedPoint.x} ${resolvedPoint.y} ${resolvedPoint.z}."
-                }
-                player.sendSystemMessage(Component.literal(message))
             }
             ctx.packetHandled = true
         }
