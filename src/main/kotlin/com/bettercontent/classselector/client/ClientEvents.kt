@@ -9,6 +9,7 @@ import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent
+import net.minecraftforge.client.event.RenderGuiEvent
 import net.minecraftforge.event.TickEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.fml.common.Mod
@@ -39,7 +40,8 @@ object ClientModEvents {
 
 @Mod.EventBusSubscriber(modid = ClassSelectorMod.MOD_ID, value = [Dist.CLIENT])
 object ClientForgeEvents {
-    private const val REMINDER_INTERVAL_TICKS = 100
+    private const val INSTRUCTION_BACKGROUND = 0xB80A0D12.toInt()
+    private const val INSTRUCTION_COLOR = 0xF4F0E6
 
     @JvmStatic
     @SubscribeEvent
@@ -79,31 +81,48 @@ object ClientForgeEvents {
 
         if (ClassSelectionState.promptOpen && mc.screen == null) {
             ClassSelectionState.promptOpen = false
-            ClassSelectionState.reminderCooldownTicks = REMINDER_INTERVAL_TICKS
-            player.displayClientMessage(
-                lockInPromptComponent(),
-                true
-            )
             if (ClassSelectionState.selectionMode != SelectionMode.NONE && ClassSelectionState.hasSelectionOptions()) {
                 openSelectionScreen(mc)
             }
-            return
         }
+    }
 
-        if (!ClassSelectionState.activeInCurrentWorld || !ClassSelectionState.selectionRequired || mc.screen != null) {
-            return
+    @JvmStatic
+    @SubscribeEvent
+    fun onRenderGui(event: RenderGuiEvent.Post) {
+        val mc = Minecraft.getInstance()
+        if (mc.options.hideGui || mc.player == null || mc.screen != null ||
+            !ClassSelectionState.activeInCurrentWorld || !ClassSelectionState.selectionRequired
+        ) return
+
+        val key = ClientModEvents.openClassMenuKey.translatedKeyMessage
+        val instructions = when (ClassSelectionState.selectionMode) {
+            SelectionMode.NONE -> listOf(
+                Component.translatable("message.class_selector.spawn_step_1", key),
+                Component.translatable("message.class_selector.spawn_step_2", key)
+            )
+            SelectionMode.CLASS -> listOf(
+                Component.translatable("message.class_selector.class_step_1", key),
+                Component.translatable("message.class_selector.class_step_2", key),
+                Component.translatable("message.class_selector.class_step_3")
+            )
+            SelectionMode.EMBARK_POINTS -> listOf(
+                Component.translatable("message.class_selector.embark_step_1", key),
+                Component.translatable("message.class_selector.embark_step_2", key),
+                Component.translatable("message.class_selector.embark_step_3")
+            )
+            SelectionMode.PROGRESSION -> return
         }
-
-        if (ClassSelectionState.reminderCooldownTicks > 0) {
-            ClassSelectionState.reminderCooldownTicks--
-            return
+        val font = mc.font
+        val maxWidth = (event.window.guiScaledWidth - 24).coerceIn(1, 320)
+        val lines = instructions.flatMap { font.split(it, maxWidth) }
+        val boxWidth = lines.maxOfOrNull(font::width) ?: return
+        val x = 8
+        val y = 8
+        event.guiGraphics.fill(x - 4, y - 4, x + boxWidth + 4, y + lines.size * 10 + 4, INSTRUCTION_BACKGROUND)
+        lines.forEachIndexed { index, line ->
+            event.guiGraphics.drawString(font, line, x, y + index * 10, INSTRUCTION_COLOR)
         }
-
-        ClassSelectionState.reminderCooldownTicks = REMINDER_INTERVAL_TICKS
-        player.displayClientMessage(
-            lockInReminderComponent(),
-            true
-        )
     }
 
     private fun finalizeSpawnOnlySelection(mc: Minecraft) {
@@ -120,34 +139,4 @@ object ClientForgeEvents {
             SelectionMode.PROGRESSION -> {}
         }
     }
-
-    private fun lockInPromptComponent(): Component =
-        when (ClassSelectionState.selectionMode) {
-            SelectionMode.NONE -> Component.translatable(
-                "message.class_selector.spawn_only_prompt",
-                ClientModEvents.openClassMenuKey.translatedKeyMessage
-            )
-
-            SelectionMode.CLASS,
-            SelectionMode.EMBARK_POINTS,
-            SelectionMode.PROGRESSION -> Component.translatable(
-                "message.class_selector.lock_in_prompt",
-                ClientModEvents.openClassMenuKey.translatedKeyMessage
-            )
-        }
-
-    private fun lockInReminderComponent(): Component =
-        when (ClassSelectionState.selectionMode) {
-            SelectionMode.NONE -> Component.translatable(
-                "message.class_selector.spawn_only_reminder",
-                ClientModEvents.openClassMenuKey.translatedKeyMessage
-            )
-
-            SelectionMode.CLASS,
-            SelectionMode.EMBARK_POINTS,
-            SelectionMode.PROGRESSION -> Component.translatable(
-                "message.class_selector.lock_in_reminder",
-                ClientModEvents.openClassMenuKey.translatedKeyMessage
-            )
-        }
 }

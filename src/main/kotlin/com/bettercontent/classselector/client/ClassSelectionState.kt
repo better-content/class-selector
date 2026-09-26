@@ -21,7 +21,6 @@ object ClassSelectionState {
     var pointQuota: Int = 0
     var promptOpen: Boolean = false
     var selectionRequired: Boolean = false
-    var reminderCooldownTicks: Int = 0
     var lockedClassId: String? = null
     var lockedRespawn: PendingRespawnSelection? = null
     var commitConfirmationArmed: Boolean = false
@@ -133,7 +132,6 @@ object ClassSelectionState {
         pointQuota = 0
         promptOpen = false
         selectionRequired = false
-        reminderCooldownTicks = 0
         clearPendingLocks()
     }
 }

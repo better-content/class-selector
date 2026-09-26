@@ -292,6 +292,19 @@ class EmbarkSelectionScreen(
         val currentCoords = currentPlayer?.let { "${it.blockX} ${it.blockY} ${it.blockZ}" } ?: "unknown"
         val purchases = ClassSelectionState.selectedEmbarkPurchases()
 
+        gui.drawString(font, Component.literal("How to begin"), innerX, y, TEXT_PRIMARY)
+        y += 12
+        y += renderWrappedBlock(
+            gui,
+            Component.literal("1. Pick supplies. 2. Scout in spectator, reopen, and lock respawn. 3. Press Begin twice to confirm."),
+            innerX,
+            y,
+            innerWidth,
+            5,
+            TEXT_WARM
+        )
+        y += 8
+
         gui.drawString(font, Component.literal("Status"), innerX, y, TEXT_PRIMARY)
         y += 12
         y += renderStatusBlock(gui, innerX, innerWidth, y, "Items picked", purchases.sumOf { it.quantity }.toString(), purchases.isNotEmpty())

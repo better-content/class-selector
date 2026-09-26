@@ -69,7 +69,6 @@ class SyncClassesPacket(
                 if (!packet.activeInCurrentWorld) {
                     ClassSelectionState.promptOpen = false
                     ClassSelectionState.selectionRequired = false
-                    ClassSelectionState.reminderCooldownTicks = 0
                 }
             }
             ctx.packetHandled = true

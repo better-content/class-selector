@@ -17,7 +17,6 @@ class RequestOpenMenuPacket {
                 }
                 ClassSelectionState.selectionRequired = true
                 ClassSelectionState.promptOpen = true
-                ClassSelectionState.reminderCooldownTicks = 0
             }
             ctx.packetHandled = true
         }

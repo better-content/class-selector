@@ -4,7 +4,6 @@ import com.bettercontent.classselector.embark.EmbarkPurchase
 import com.bettercontent.classselector.network.ClassSelectorNetwork
 import com.bettercontent.classselector.network.FinalizeSelectionPacket
 import net.minecraft.client.Minecraft
-import net.minecraft.network.chat.Component
 
 object ClientOnboardingActions {
     fun lockCurrentRespawn(mc: Minecraft): Boolean {
@@ -20,7 +19,7 @@ object ClientOnboardingActions {
 
     fun submitSpawnOnly(mc: Minecraft): Boolean {
         val player = mc.player ?: return false
-        if (!confirmCommit(player)) return false
+        if (!confirmCommit()) return false
         markSelectionSubmitted()
         ClassSelectorNetwork.CHANNEL.sendToServer(
             FinalizeSelectionPacket.spawnOnly(
@@ -35,8 +34,8 @@ object ClientOnboardingActions {
 
     fun submitClassSelection(classId: String): Boolean {
         val respawn = ClassSelectionState.lockedRespawn ?: return false
-        val player = Minecraft.getInstance().player ?: return false
-        if (!confirmCommit(player)) return false
+        if (Minecraft.getInstance().player == null) return false
+        if (!confirmCommit()) return false
         markSelectionSubmitted()
         ClassSelectorNetwork.CHANNEL.sendToServer(
             FinalizeSelectionPacket.classSelection(classId, respawn.dim, respawn.x, respawn.y, respawn.z)
@@ -47,8 +46,8 @@ object ClientOnboardingActions {
     fun submitEmbarkSelection(purchases: List<EmbarkPurchase>): Boolean {
         val respawn = ClassSelectionState.lockedRespawn ?: return false
         if (purchases.isEmpty()) return false
-        val player = Minecraft.getInstance().player ?: return false
-        if (!confirmCommit(player)) return false
+        if (Minecraft.getInstance().player == null) return false
+        if (!confirmCommit()) return false
         markSelectionSubmitted()
         ClassSelectorNetwork.CHANNEL.sendToServer(
             FinalizeSelectionPacket.embarkSelection(purchases, respawn.dim, respawn.x, respawn.y, respawn.z)
@@ -59,13 +58,11 @@ object ClientOnboardingActions {
     internal fun markSelectionSubmitted() {
         ClassSelectionState.selectionRequired = false
         ClassSelectionState.promptOpen = false
-        ClassSelectionState.reminderCooldownTicks = 0
     }
 
-    private fun confirmCommit(player: net.minecraft.client.player.LocalPlayer): Boolean {
+    private fun confirmCommit(): Boolean {
         if (ClassSelectionState.commitConfirmationArmed) return true
         ClassSelectionState.commitConfirmationArmed = true
-        player.displayClientMessage(Component.translatable("message.class_selector.commit_confirm"), true)
         return false
     }
 }
